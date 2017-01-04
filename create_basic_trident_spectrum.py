@@ -4,30 +4,23 @@ import numpy as np
 
 from astropy.io import fits
 
+## read in example data
 fn = 'WindTest/DD0010/DD0010'
 ds = yt.load(fn)
 
+## create ray start and end
 ray_start = [1,0,1]
 ray_end = [1,2,1]
 
+
+## lines to calculate spectrum fo
 ## line_list = ['H','C','N','O','Mg','S','Si','Ne']
 ldb = trident.LineDatabase('lines.txt')
 line_list = ['H I 1216', 'C IV 1548', 'O VI 1032']
 ll = ldb.parse_subset(line_list)
 
-ray = trident.make_simple_ray(ds,start_position=ray_start,end_position=ray_end,
-                                data_filename="ray.h5",lines=line_list,ftype='gas')
 
-
-# sg = trident.SpectrumGenerator('COS-G130M')
-# sg = trident.SpectrumGenerator(lambda_min=1150, lambda_max=1250, dlambda=0.01)
-# sg.make_spectrum(ray,lines=line_list)
-
-# filespecout = 'spectrum_'+ds.basename+'.png'
-# sg.plot_spectrum(filespecout,flux_limits=(0.9,1.0))
-
-# sg.save_spectrum('spec_raw.txt')
-
+## begin making fits header
 prihdr = fits.Header()
 prihdr['RAY_START'] = str(ray_start)
 prihdr['RAY_END'] = str(ray_end)
@@ -56,7 +49,13 @@ for line in ll:
     col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field)
     col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
     col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
-    cols = fits.ColDefs([col1, col2, col3])
+    col_list = [col1,col2,col3]
+
+    for key in sg.line_observables[line.identifier].keys():
+        col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line.identifier][key])
+        col_list = np.append(col_list,col)    
+ 
+    cols = fits.ColDefs(col_list)
     sghdr = fits.Header()
     sghdr['LINE'] = line.name
     sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)

@@ -3,6 +3,7 @@ import trident
 import numpy as np
 
 from astropy.io import fits
+import time
 
 fn = 'WindTest/DD0010/DD0010'
 ds = yt.load(fn)
@@ -28,10 +29,18 @@ ray = trident.make_simple_ray(ds,start_position=ray_start,end_position=ray_end,
 
 # sg.save_spectrum('spec_raw.txt')
 
+## create the primary header. lots more stuff needs to go here!
 prihdr = fits.Header()
+prihdr['AUTHOR'] = "Molly Peeples"
+prihdr['DATE'] = time.strftime("%c") ## doesn't have time zone
 prihdr['RAY_START'] = str(ray_start)
 prihdr['RAY_END'] = str(ray_end)
 prihdr['SIMULATION_NAME'] = fn
+i = 1
+for line in ll:
+    keyword = 'LINE_'+str(i)
+    prihdr[keyword] = line.name
+    i += 1
 prihdu = fits.PrimaryHDU(header=prihdr)
 sghdulist = fits.HDUList([prihdu])
 

@@ -22,9 +22,16 @@ ll = ldb.parse_subset(line_list)
 
 ## begin making fits header
 prihdr = fits.Header()
+prihdr['AUTHOR'] = "Molly Peeples"
+prihdr['DATE'] = time.strftime("%c") ## doesn't have time zone
 prihdr['RAY_START'] = str(ray_start)
 prihdr['RAY_END'] = str(ray_end)
 prihdr['SIMULATION_NAME'] = fn
+i = 1
+for line in ll:
+    keyword = 'LINE_'+str(i)
+    prihdr[keyword] = line.name
+    i += 1
 prihdu = fits.PrimaryHDU(header=prihdr)
 sghdulist = fits.HDUList([prihdu])
 
@@ -42,7 +49,7 @@ for line in ll:
     sg.make_spectrum(ray,lines=line.name)
 
     # let's plot it!
-    filespecout = 'spectrum_'+ds.basename+'_'+line.name.replace(" ", "_")+'.png'
+    filespecout = 'spectrum_'+ds.basename+'_'+line.identifier.replace(" ", "_")+'.png'
     sg.plot_spectrum(filespecout,flux_limits=(0.0,1.0))
 
     # make this sg an hdu
@@ -57,7 +64,10 @@ for line in ll:
  
     cols = fits.ColDefs(col_list)
     sghdr = fits.Header()
-    sghdr['LINE'] = line.name
+    sghdr['LINE_NAME'] = line.identifier
+    sghdr['LINE_REST_WAVELENGTH'] = line.wavelength
+    sghdr['LINE_F_VALUE'] = line.f_value
+    sghdr['LINE_GAMMA'] = line.gamma
     sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
 
     sghdulist.append(sghdu)

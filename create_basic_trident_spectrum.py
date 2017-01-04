@@ -4,6 +4,8 @@ import numpy as np
 
 from astropy.io import fits
 
+import time
+
 ## read in example data
 fn = 'WindTest/DD0010/DD0010'
 ds = yt.load(fn)
@@ -60,8 +62,8 @@ for line in ll:
 
     for key in sg.line_observables[line.identifier].keys():
         col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line.identifier][key])
-        col_list = np.append(col_list,col)    
- 
+        col_list = np.append(col_list,col)
+
     cols = fits.ColDefs(col_list)
     sghdr = fits.Header()
     sghdr['LINE_NAME'] = line.identifier

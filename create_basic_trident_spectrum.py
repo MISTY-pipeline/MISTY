@@ -20,14 +20,13 @@ ray = trident.make_simple_ray(ds,start_position=ray_start,end_position=ray_end,
 
 
 # sg = trident.SpectrumGenerator('COS-G130M')
-sg = trident.SpectrumGenerator(lambda_min=1150, lambda_max=1250, dlambda=0.01)
+# sg = trident.SpectrumGenerator(lambda_min=1150, lambda_max=1250, dlambda=0.01)
+# sg.make_spectrum(ray,lines=line_list)
 
-sg.make_spectrum(ray,lines=line_list)
+# filespecout = 'spectrum_'+ds.basename+'.png'
+# sg.plot_spectrum(filespecout,flux_limits=(0.9,1.0))
 
-filespecout = 'spectrum_'+ds.basename+'.png'
-sg.plot_spectrum(filespecout,flux_limits=(0.9,1.0))
-
-sg.save_spectrum('spec_raw.txt')
+# sg.save_spectrum('spec_raw.txt')
 
 prihdr = fits.Header()
 prihdr['RAY_START'] = str(ray_start)
@@ -48,6 +47,10 @@ for line in ll:
     print lambda_min, lambda_max
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, lambda_max=lambda_max.value, dlambda=0.01)
     sg.make_spectrum(ray,lines=line.name)
+
+    # let's plot it!
+    filespecout = 'spectrum_'+ds.basename+'_'+line.name.replace(" ", "_")+'.png'
+    sg.plot_spectrum(filespecout,flux_limits=(0.0,1.0))
 
     # make this sg an hdu
     col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field)

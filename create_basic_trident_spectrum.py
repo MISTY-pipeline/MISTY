@@ -58,7 +58,7 @@ for line in ll:
     sg.make_spectrum(ray,lines=line.name)
 
     # let's plot it!
-    filespecout = 'spectrum_'+ds.basename+'_'+line.name.replace(" ", "_")+'.png'
+    filespecout = 'spectrum_'+ds.basename+'_'+line.identifier.replace(" ", "_")+'.png'
     sg.plot_spectrum(filespecout,flux_limits=(0.0,1.0))
 
     # make this sg an hdu
@@ -67,7 +67,10 @@ for line in ll:
     col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     cols = fits.ColDefs([col1, col2, col3])
     sghdr = fits.Header()
-    sghdr['LINE'] = line.name
+    sghdr['LINE_NAME'] = line.identifier
+    sghdr['LINE_REST_WAVELENGTH'] = line.wavelength
+    sghdr['LINE_F_VALUE'] = line.f_value
+    sghdr['LINE_GAMMA'] = line.gamma
     sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
 
     sghdulist.append(sghdu)

@@ -30,16 +30,17 @@ def generate_line(ray,line,write=False,hdulist=None):
        raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
     if not isinstance(line,trident.Line):
-    	line = ldb.parse_subset(line)
-    	line = line[0]
+        print 'here line is ',str(line)
+    	line_out = ldb.parse_subset(line)
+    	line_out = line_out[0]
 
     ar = ray.all_data()
-    lambda_rest = line.wavelength
+    lambda_rest = line_out.wavelength
     lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 1
     lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 1
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, lambda_max=lambda_max.value, dlambda=0.01)
-    sg.make_spectrum(ray,lines=line.name)
+    sg.make_spectrum(ray,lines=line_out.name)
 
     if write:
     	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field)
@@ -47,16 +48,16 @@ def generate_line(ray,line,write=False,hdulist=None):
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     	col_list = [col1,col2,col3]
 
-    	for key in sg.line_observables[line.identifier].keys():
-    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line.identifier][key])
+    	for key in sg.line_observables[line_out.identifier].keys():
+    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line_out.identifier][key])
     	    col_list = np.append(col_list,col)
 
     	cols = fits.ColDefs(col_list)
     	sghdr = fits.Header()
-    	sghdr['LINE_NAME'] = line.identifier
-    	sghdr['LINE_REST_WAVELENGTH'] = line.wavelength
-    	sghdr['LINE_F_VALUE'] = line.f_value
-    	sghdr['LINE_GAMMA'] = line.gamma
+    	sghdr['LINE_NAME'] = line_out.identifier
+    	sghdr['LINE_REST_WAVELENGTH'] = line_out.wavelength
+    	sghdr['LINE_F_VALUE'] = line_out.f_value
+    	sghdr['LINE_GAMMA'] = line_out.gamma
     	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
 
     	hdulist.append(sghdu)

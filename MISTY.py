@@ -14,7 +14,7 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
 	prihdr['RAY_START'] = str(start_pos)
 	prihdr['RAY_END'] = str(end_pos)
 	prihdr['SIMULATION_NAME'] = ray.basename
-	
+
 	lines = ldb.parse_subset(lines)
 	i = 1
 	for line in lines:
@@ -30,9 +30,9 @@ def generate_line(ray,line,write=False,hdulist=None):
        raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
     if not isinstance(line,trident.Line):
-        print 'here line is ',str(line)
-    	line_out = ldb.parse_subset(line)
-    	line_out = line_out[0]
+        ldb = trident.LineDatabase('lines.txt')
+        line_out = ldb.parse_subset(line)
+        line_out = line_out[0]
 
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
@@ -65,9 +65,5 @@ def generate_line(ray,line,write=False,hdulist=None):
     return sg
 
 def write_out(hdulist,filename='spectrum.fits'):
-	hdulist.writeto(filename, overwrite=True) 
+	hdulist.writeto(filename, overwrite=True)
 	return
-
-
-
-

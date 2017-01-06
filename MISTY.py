@@ -11,9 +11,9 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
 	prihdr = fits.Header()
 	prihdr['AUTHOR'] = author
 	prihdr['DATE'] = time.strftime("%c") ## doesn't have time zone
-	prihdr['RAY_START'] = str(start_pos)
-	prihdr['RAY_END'] = str(end_pos)
-	prihdr['SIMULATION_NAME'] = ray.basename
+	prihdr['RAYSTART'] = str(start_pos)
+	prihdr['RAYEND'] = str(end_pos)
+	prihdr['SIM_NAME'] = ray.basename
 
 	lines = ldb.parse_subset(lines)
 	i = 1
@@ -54,10 +54,10 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     	cols = fits.ColDefs(col_list)
     	sghdr = fits.Header()
-    	sghdr['LINE_NAME'] = line_out.identifier
-    	sghdr['LINE_REST_WAVELENGTH'] = line_out.wavelength
-    	sghdr['LINE_F_VALUE'] = line_out.f_value
-    	sghdr['LINE_GAMMA'] = line_out.gamma
+    	sghdr['LINENAME'] = line_out.identifier
+    	sghdr['RESTWAVE'] = line_out.wavelength
+    	sghdr['F_VALUE'] = line_out.f_value
+    	sghdr['GAMMA'] = line_out.gamma
     	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
 
     	hdulist.append(sghdu)

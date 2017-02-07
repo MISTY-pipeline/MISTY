@@ -5,6 +5,7 @@ import yt
 
 ##field_data = ray.all_data()
 ## use_peculiar_velocity is a boolean for yes/no
+## comments added by JT 
 
 
 def apply_observing_redshift(self, field_data, use_peculiar_velocity,

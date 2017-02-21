@@ -27,6 +27,7 @@ def parse_args():
                         default='A MISTY User',
                         help='name of person running this script')
 
+    parser.add_argument('--param_file',dest='paramfile',type=str,action='store',                        default='a parameter text file')
     # parser.error("blah")
 
     args = parser.parse_args()
@@ -57,12 +58,15 @@ def create_misty_spectrum():
     hdulist = MISTY.write_header(ray,start_pos=ray_start,end_pos=ray_end,
                       lines=my_line_list, author=args.author)
 
+    ## put parameter file into the fits file
+    MISTY.write_parameter_file(args.paramfile,hdulist=hdulist)
+
     for line in my_line_list:
         sg = MISTY.generate_line(ray,line,write=True,hdulist=hdulist)
         filespecout = filespecout_base+'_'+line.replace(" ", "_")+'.png'
         sg.plot_spectrum(filespecout,flux_limits=(0.0,1.0))
 
-    MISTY.write_out(hdulist,filename='advance_spectrum.fits')
+    MISTY.write_out(hdulist,filename='lauren_advance_spectrum.fits')
 
 
 if __name__ == "__main__":

@@ -25,6 +25,25 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
 	sghdulist = fits.HDUList([prihdu])
 	return sghdulist
 
+def write_parameter_file(filename,hdulist=None):
+    if type(hdulist) != fits.hdu.hdulist.HDUList:
+        raise ValueError('Must pass HDUList in order to write. Call write_header first.')
+
+    param_file = np.genfromtxt(filename,delimiter='=',dtype=str,autostrip=True)
+    col1 = fits.Column(name='PARAMETERS',format='A50',array=param_file[:,0])
+    col2 = fits.Column(name='VALUES',format='A50',array=param_file[:,1])
+    col_list = [col1,col2]
+
+    cols = fits.ColDefs(col_list)
+    sghdr = fits.Header()
+    sghdr['SIM_CODE'] = 'enzo'
+    sghdr['COMPUTER'] = 'pleiades'
+
+    sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
+    hdulist.append(sghdu)    
+
+    return
+
 def generate_line(ray,line,write=False,hdulist=None):
     if (write == True) & ((type(hdulist) != fits.hdu.hdulist.HDUList)):
        raise ValueError('Must pass HDUList in order to write. Call write_header first.')
@@ -58,6 +77,26 @@ def generate_line(ray,line,write=False,hdulist=None):
     	sghdr['RESTWAVE'] = line_out.wavelength
     	sghdr['F_VALUE'] = line_out.f_value
     	sghdr['GAMMA'] = line_out.gamma
+
+        ## want to leave blank spaces now for values that we're expecting to generate for MAST
+        ## first let's add some spaces for the simulated, tau-weighted values!
+        sghdr['SIM_TAU_HDENS'] = -9999.
+        sghdr['SIM_TAU_TEMP'] = -9999.
+        sghdr['SIM_TAU_METAL'] = -9999.
+
+        ## we're also going to want data from Nick's fitting code
+        ## it's going to give values for all of it's components
+        ## for now, let's give it five and assume that many are going to be empty
+        sghdr['NCOMPONENTS'] = 5.
+        names = ['fit_EW','fit_coldens','fit_vcenter','fit_b','fit_delv90']
+        ncomponent_standard = 5
+        j = 0
+        while j < ncomponent_standard:
+            for name in names:
+                stringin = name+str(j)
+                sghdr[stringin] = -9999.
+            j = j + 1
+
     	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
 
     	hdulist.append(sghdu)

@@ -1,0 +1,9 @@
+Things Still To Do:
+
+1) Decide which galaxy properties we would like to be searchable in the header
+2) Decide how to handle non-cosmological sims in this process
+3) Add units to the rest of the spectrum columns
+4) Confirm handling expected output from component fitting correctly
+5) Generate the tau-weighted simulated values
+
+

@@ -2,28 +2,31 @@ import numpy as np
 from astropy.io import fits
 import time
 import trident
+import datetime
 
 ldb = trident.LineDatabase('lines.txt')
 
 
 def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
 	## begin making fits header
-	prihdr = fits.Header()
-	prihdr['AUTHOR'] = author
-	prihdr['DATE'] = time.strftime("%c") ## doesn't have time zone
-	prihdr['RAYSTART'] = str(start_pos)
-	prihdr['RAYEND'] = str(end_pos)
-	prihdr['SIM_NAME'] = ray.basename
+    prihdr = fits.Header()
+    prihdr['AUTHOR'] = author
+    prihdr['DATE'] = datetime.datetime.now().isoformat() ## from Scott
+    prihdr['RAYSTART'] = str(start_pos)
+    prihdr['RAYEND'] = str(end_pos)
+    prihdr['SIM_NAME'] = ray.basename
+    prihdr['NLINES'] = str(len(np.array(lines)))    
 
-	lines = ldb.parse_subset(lines)
-	i = 1
-	for line in lines:
-	    keyword = 'LINE_'+str(i)
-    	    prihdr[keyword] = line.name
-    	    i += 1
-	prihdu = fits.PrimaryHDU(header=prihdr)
-	sghdulist = fits.HDUList([prihdu])
-	return sghdulist
+    lines = ldb.parse_subset(lines)
+    
+    i = 1
+    for line in lines:
+        keyword = 'LINE_'+str(i)
+        prihdr[keyword] = line.name
+        i += 1
+    prihdu = fits.PrimaryHDU(header=prihdr)
+    sghdulist = fits.HDUList([prihdu])
+    return sghdulist
 
 def write_parameter_file(filename,hdulist=None):
     if type(hdulist) != fits.hdu.hdulist.HDUList:

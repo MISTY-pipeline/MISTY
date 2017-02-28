@@ -39,7 +39,7 @@ def write_parameter_file(filename,hdulist=None):
     sghdr['SIM_CODE'] = 'enzo'
     sghdr['COMPUTER'] = 'pleiades'
 
-    sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
+    sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name='PARAMS')
     hdulist.append(sghdu)    
 
     return
@@ -62,7 +62,7 @@ def generate_line(ray,line,write=False,hdulist=None):
     sg.make_spectrum(ray,lines=line_out.name)
 
     if write:
-    	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field)
+    	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
     	col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     	col_list = [col1,col2,col3]
@@ -97,7 +97,7 @@ def generate_line(ray,line,write=False,hdulist=None):
                 sghdr[stringin] = -9999.
             j = j + 1
 
-    	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr)
+    	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name=line_out.name)
 
     	hdulist.append(sghdu)
 

@@ -46,7 +46,7 @@ def create_misty_spectrum():
         ray_start = [1,0,1]
         ray_end = [1,2,1]
         ray = trident.make_simple_ray(ds,start_position=ray_start,end_position=ray_end,
-                        data_filename="ray.h5",lines=my_line_list,ftype='gas')
+                        lines=my_line_list,ftype='gas')
         filespecout_base = 'spectrum_'+ds.basename
     else:
         ray = yt.load(args.ray)

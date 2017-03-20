@@ -15,10 +15,10 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
     prihdr['RAYSTART'] = str(start_pos)
     prihdr['RAYEND'] = str(end_pos)
     prihdr['SIM_NAME'] = ray.basename
-    prihdr['NLINES'] = str(len(np.array(lines)))    
+    prihdr['NLINES'] = str(len(np.array(lines)))
 
     lines = ldb.parse_subset(lines)
-    
+
     i = 1
     for line in lines:
         keyword = 'LINE_'+str(i)
@@ -32,20 +32,26 @@ def write_parameter_file(filename,hdulist=None):
     if type(hdulist) != fits.hdu.hdulist.HDUList:
         raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
+    # is a filename given? then use that
     param_file = np.genfromtxt(filename,delimiter='=',dtype=str,autostrip=True)
     col1 = fits.Column(name='PARAMETERS',format='A50',array=param_file[:,0])
     col2 = fits.Column(name='VALUES',format='A50',array=param_file[:,1])
-    col_list = [col1,col2]
 
+    # if not, use the ds.parameters
+    col1 = fits.Column(name='PARAMETERS',format='A50',array=ds.parameters.keys())
+    col2 = fits.Column(name='VALUES',format='A100',array=ds.parameters.values())
+
+    col_list = [col1,col2]
     cols = fits.ColDefs(col_list)
     sghdr = fits.Header()
     sghdr['SIM_CODE'] = 'enzo'
     sghdr['COMPUTER'] = 'pleiades'
+    print "---> ASSUMING ENZO AND PLEIADES FOR NOW BUT THESE SHOULD BE PASSSSSSED IN"
 
     sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name='PARAMS')
-    hdulist.append(sghdu)    
+    hdulist.append(sghdu)
 
-    return
+    return sghdu
 
 def generate_line(ray,line,write=False,hdulist=None):
     if (write == True) & ((type(hdulist) != fits.hdu.hdulist.HDUList)):

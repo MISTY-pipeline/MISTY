@@ -3,7 +3,7 @@ from astropy.io import fits
 import time
 import trident
 import datetime
-import os
+import os.path
 
 ldb = trident.LineDatabase('lines.txt')
 
@@ -34,14 +34,14 @@ def write_parameter_file(ds,filename=None,hdulist=None):
         raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
     # is a filename given? then use that
-    if os.path.exists(filename):
+    if filename != None and os.path.isfile(filename):
         param_file = np.genfromtxt(filename,delimiter='=',dtype=str,autostrip=True)
         col1 = fits.Column(name='PARAMETERS',format='A50',array=param_file[:,0])
-        col2 = fits.Column(name='VALUES',format='A100',array=param_file[:,1])
+        col2 = fits.Column(name='VALUES',format='A50',array=param_file[:,1])
     else:
         #  use ds.parameters
         col1 = fits.Column(name='PARAMETERS',format='A50',array=ds.parameters.keys())
-        col2 = fits.Column(name='VALUES',format='A100',array=ds.parameters.values())
+        col2 = fits.Column(name='VALUES',format='A50',array=[str(v) for v in ds.parameters.values()])
 
     col_list = [col1,col2]
     cols = fits.ColDefs(col_list)

@@ -3,6 +3,7 @@ from astropy.io import fits
 import time
 import trident
 import datetime
+import os
 
 ldb = trident.LineDatabase('lines.txt')
 
@@ -28,18 +29,19 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
     sghdulist = fits.HDUList([prihdu])
     return sghdulist
 
-def write_parameter_file(filename,hdulist=None):
+def write_parameter_file(ds,filename=None,hdulist=None):
     if type(hdulist) != fits.hdu.hdulist.HDUList:
         raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
     # is a filename given? then use that
-    param_file = np.genfromtxt(filename,delimiter='=',dtype=str,autostrip=True)
-    col1 = fits.Column(name='PARAMETERS',format='A50',array=param_file[:,0])
-    col2 = fits.Column(name='VALUES',format='A50',array=param_file[:,1])
-
-    # if not, use the ds.parameters
-    col1 = fits.Column(name='PARAMETERS',format='A50',array=ds.parameters.keys())
-    col2 = fits.Column(name='VALUES',format='A100',array=ds.parameters.values())
+    if os.path.exists(filename):
+        param_file = np.genfromtxt(filename,delimiter='=',dtype=str,autostrip=True)
+        col1 = fits.Column(name='PARAMETERS',format='A50',array=param_file[:,0])
+        col2 = fits.Column(name='VALUES',format='A100',array=param_file[:,1])
+    else:
+        #  use ds.parameters
+        col1 = fits.Column(name='PARAMETERS',format='A50',array=ds.parameters.keys())
+        col2 = fits.Column(name='VALUES',format='A100',array=ds.parameters.values())
 
     col_list = [col1,col2]
     cols = fits.ColDefs(col_list)

@@ -99,7 +99,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         ## it's going to give values for all of it's components
         ## for now, let's give it five and assume that many are going to be empty
         sghdr['NCOMPONENTS'] = 5.
-        names = ['fit_EW','fit_coldens','fit_vcenter','fit_b','fit_delv90']
+        names = ['fitEW','fitcol','fitvcen','fitb','fitv90']
         ncomponent_standard = 5
         j = 0
         while j < ncomponent_standard:

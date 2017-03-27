@@ -46,9 +46,11 @@ def write_parameter_file(ds,filename=None,hdulist=None):
     col_list = [col1,col2]
     cols = fits.ColDefs(col_list)
     sghdr = fits.Header()
-    sghdr['SIM_CODE'] = 'enzo'
+    ds.index
+    sghdr['SIM_CODE'] = ds.dataset_type
+    print "---> SIM_CODE set to ", ds.dataset_type, "if you don't like this, change it!"
     sghdr['COMPUTER'] = 'pleiades'
-    print "---> ASSUMING ENZO AND PLEIADES FOR NOW BUT THESE SHOULD BE PASSSSSSED IN"
+    print "---> ASSUMING PLEIADES FOR NOW BUT SHOULD BE PASSSSSSED IN"
 
     sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name='PARAMS')
     hdulist.append(sghdu)
@@ -62,6 +64,7 @@ def generate_line(ray,line,write=False,hdulist=None):
     if not isinstance(line,trident.Line):
         ldb = trident.LineDatabase('lines.txt')
         line_out = ldb.parse_subset(line)
+        print line, line_out
         line_out = line_out[0]
 
     ar = ray.all_data()
@@ -89,11 +92,14 @@ def generate_line(ray,line,write=False,hdulist=None):
     	sghdr['F_VALUE'] = line_out.f_value
     	sghdr['GAMMA'] = line_out.gamma
 
+
         ## want to leave blank spaces now for values that we're expecting to generate for MAST
         ## first let's add some spaces for the simulated, tau-weighted values!
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
+        sghdr['TOT_COLUMN'] = np.sum(spf[2].data['sim_column_density'])
+
 
         ## we're also going to want data from Nick's fitting code
         ## it's going to give values for all of it's components

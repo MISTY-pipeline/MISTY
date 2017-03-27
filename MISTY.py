@@ -2,6 +2,8 @@ import numpy as np
 from astropy.io import fits
 import time
 import trident
+import spectacle
+
 import datetime
 import os.path
 
@@ -58,6 +60,9 @@ def write_parameter_file(ds,filename=None,hdulist=None):
     return sghdu
 
 def generate_line(ray,line,write=False,hdulist=None):
+    '''
+    input: a lightray and a line; writes info to extension of hdulist
+    '''
     if (write == True) & ((type(hdulist) != fits.hdu.hdulist.HDUList)):
        raise ValueError('Must pass HDUList in order to write. Call write_header first.')
 
@@ -88,6 +93,7 @@ def generate_line(ray,line,write=False,hdulist=None):
     	cols = fits.ColDefs(col_list)
     	sghdr = fits.Header()
     	sghdr['LINENAME'] = line_out.identifier
+        print "----->>>>using ", line_out.identifier, "as LINENAME, whereas ", line, " was passed. Change?"
     	sghdr['RESTWAVE'] = line_out.wavelength
     	sghdr['F_VALUE'] = line_out.f_value
     	sghdr['GAMMA'] = line_out.gamma
@@ -98,7 +104,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        sghdr['TOT_COLUMN'] = np.sum(spf[2].data['sim_column_density'])
+        # sghdr['TOT_COLUMN'] = np.sum(spf[2].data['sim_column_density'])
 
 
         ## we're also going to want data from Nick's fitting code
@@ -120,6 +126,13 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     return sg
 
+def get_line_info(sg):
+    '''
+    runs spectacle on a trident spectrum object and returns absorber properties
+    '''
+
+    return ""
+
 def write_out(hdulist,filename='spectrum.fits'):
 	hdulist.writeto(filename, overwrite=True)
-	return
+	return ""

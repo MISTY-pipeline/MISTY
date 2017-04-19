@@ -19,11 +19,13 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
 	## begin making fits header
     prihdr = fits.Header()
     prihdr['AUTHOR'] = author
-    prihdr['DATE'] = datetime.datetime.now().isoformat() ## from Scott
+    prihdr['DATE'] = datetime.datetime.now().isoformat()
     prihdr['RAYSTART'] = str(start_pos)
     prihdr['RAYEND'] = str(end_pos)
     prihdr['SIM_NAME'] = ray.basename
     prihdr['NLINES'] = str(len(np.array(lines)))
+    prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
+    prihdr['EUVB'] = "HM12" ## probably shouldn't be hardcoded
 
     lines = ldb.parse_subset(lines)
 
@@ -110,7 +112,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        # sghdr['TOT_COLUMN'] = np.sum(spf[2].data['sim_column_density'])
+        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables[line_out.identifier]['column_density'].value))
 
 
         ## we're also going to want data from Nick's fitting code

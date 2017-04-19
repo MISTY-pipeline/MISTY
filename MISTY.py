@@ -4,6 +4,11 @@ import time
 import trident
 import spectacle
 
+from spectacle.core.spectra import Spectrum1D
+from spectacle.modeling.models import Absorption1D
+from spectacle.core.lines import Line
+from astropy.modeling.fitting import LevMarLSQFitter
+
 import datetime
 import os.path
 
@@ -74,10 +79,11 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
-    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 1
-    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 1
+    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 1.5
+    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 1.5
 
-    sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, lambda_max=lambda_max.value, dlambda=0.01)
+    sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, \
+        lambda_max=lambda_max.value, dlambda=0.0001)
     sg.make_spectrum(ray,lines=line_out.name)
 
     if write:
@@ -111,9 +117,14 @@ def generate_line(ray,line,write=False,hdulist=None):
         ## it's going to give values for all of it's components
         ## for now, let's give it five and assume that many are going to be empty
         sghdr['NCOMPONENTS'] = 5.
-        names = ['fitEW','fitcol','fitvcen','fitb','fitv90']
+        # names = ['fitEW','fitcol','fitvcen','fitb','fitv90']
+        line_properties = get_line_info(sg)
+        for key in line_properties:
+            stringin = key+str(0)
+            sghdr[stringin] = line_properties[key]
+        names = ['fitEW','fitcol','fitvcen','fitb']
         ncomponent_standard = 5
-        j = 0
+        j = 1
         while j < ncomponent_standard:
             for name in names:
                 stringin = name+str(j)
@@ -130,8 +141,32 @@ def get_line_info(sg):
     '''
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
+    disp = sg.lambda_field
+    flux = sg.flux_field
+    spectrum = Spectrum1D(flux, dispersion=disp)
+    line = Line(name=sg.line_list[0]['label'], \
+            lambda_0=sg.line_list[0]['wavelength'].value, \
+            f_value=sg.line_list[0]['f_value'], \
+            gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
+                                                 'f_value': True,
+                                                 'gamma': True,
+                                                 'v_doppler': False,
+                                                 'column_density': False,
+                                                })
+    spec_mod = Absorption1D(lines=[line])
 
-    return ""
+    # Create a fitter. The default fitting routine is a LevMarLSQ.
+    fitter = LevMarLSQFitter()
+    fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
+    fit_y = fit_spec_mod(spectrum.dispersion.value)
+
+    # OK now we want line properties
+    line_properties = {'fitcol' : fit_spec_mod.column_density_1.value,
+                       'fitb': fit_spec_mod.v_doppler_1.value,
+                       'fitvcen' : fit_spec_mod.lambda_0_1.value,
+                       'fitEW' : fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0]}
+
+    return line_properties
 
 def write_out(hdulist,filename='spectrum.fits'):
 	hdulist.writeto(filename, overwrite=True)

@@ -15,7 +15,7 @@ import os.path
 ldb = trident.LineDatabase('lines.txt')
 
 
-def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
+def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME',**kwargs):
 	## begin making fits header
     prihdr = fits.Header()
     prihdr['AUTHOR'] = author
@@ -25,7 +25,10 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME'):
     prihdr['SIM_NAME'] = ray.basename
     prihdr['NLINES'] = str(len(np.array(lines)))
     prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
+    prihdr['PAPER'] = "Corlies et al. (2017) ApJ, ###, ###"
     prihdr['EUVB'] = "HM12" ## probably shouldn't be hardcoded
+    prihdr['IMPACT'] = kwargs.get("impact","undef")
+    prihdr['ANGLE'] = kwargs.get("angle","undef")
 
     lines = ldb.parse_subset(lines)
 
@@ -123,7 +126,10 @@ def generate_line(ray,line,write=False,hdulist=None):
         line_properties = get_line_info(sg)
         for key in line_properties:
             stringin = key+str(0)
-            sghdr[stringin] = line_properties[key]
+            if np.isnan(line_properties[key]):
+                sghdr[stringin] = "NaN"
+            else:
+                sghdr[stringin] = line_properties[key]
         names = ['fitEW','fitcol','fitvcen','fitb']
         ncomponent_standard = 5
         j = 1

@@ -9,16 +9,17 @@ from spectacle.modeling.models import Absorption1D
 from spectacle.core.lines import Line
 from astropy.modeling.fitting import LevMarLSQFitter
 
+import getpass
 import datetime
 import os.path
 
 ldb = trident.LineDatabase('lines.txt')
 
 
-def write_header(ray,start_pos=None,end_pos=None,lines=None,author='NAME',**kwargs):
+def write_header(ray,start_pos=None,end_pos=None,lines=None,**kwargs):
 	## begin making fits header
     prihdr = fits.Header()
-    prihdr['AUTHOR'] = author
+    prihdr['AUTHOR'] = kwargs.get("author",getpass.getuser())
     prihdr['DATE'] = datetime.datetime.now().isoformat()
     prihdr['RAYSTART'] = str(start_pos)
     prihdr['RAYEND'] = str(end_pos)

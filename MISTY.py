@@ -92,20 +92,20 @@ def generate_line(ray,line,write=False,hdulist=None):
         lambda_max=lambda_max.value, dlambda=0.0001)
     sg.make_spectrum(ray,lines=line_out.name)
 
-    if write:
+    if write and len(sg.line_observables) > 0:
     	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
     	col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     	col_list = [col1,col2,col3]
 
-    	for key in sg.line_observables[line_out.identifier].keys():
-    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line_out.identifier][key])
+    	for key in sg.line_observables[line_out.name].keys():
+    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line_out.name][key])
     	    col_list = np.append(col_list,col)
 
     	cols = fits.ColDefs(col_list)
     	sghdr = fits.Header()
-    	sghdr['LINENAME'] = line_out.identifier
-        print "----->>>>using ", line_out.identifier, "as LINENAME, whereas ", line, " was passed. Change?"
+    	sghdr['LINENAME'] = line_out.name
+        print "----->>>>using ", line_out.name, "as LINENAME, whereas ", line, " was passed. Change?"
     	sghdr['RESTWAVE'] = line_out.wavelength
     	sghdr['F_VALUE'] = line_out.f_value
     	sghdr['GAMMA'] = line_out.gamma
@@ -116,7 +116,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables[line_out.identifier]['column_density'].value))
+        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables[line_out.name]['column_density'].value))
 
 
         ## we're also going to want data from Nick's fitting code

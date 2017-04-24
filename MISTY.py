@@ -85,8 +85,8 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
-    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 1.5
-    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 1.5
+    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 5
+    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 5
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, \
         lambda_max=lambda_max.value, dlambda=0.0001)
@@ -122,9 +122,10 @@ def generate_line(ray,line,write=False,hdulist=None):
         ## we're also going to want data from Nick's fitting code
         ## it's going to give values for all of it's components
         ## for now, let's give it five and assume that many are going to be empty
-        sghdr['NCOMPONENTS'] = 5.
+        sghdr['NCOMPONENTS'] = 5
         # names = ['fitEW','fitcol','fitvcen','fitb','fitv90']
         line_properties = get_line_info(sg)
+        print line_properties
         for key in line_properties:
             stringin = key+str(0)
             if np.isnan(line_properties[key]):
@@ -132,7 +133,7 @@ def generate_line(ray,line,write=False,hdulist=None):
             else:
                 sghdr[stringin] = line_properties[key]
         names = ['fitEW','fitcol','fitvcen','fitb']
-        ncomponent_standard = 5
+        ncomponent_standard = sghdr['NCOMPONENTS']
         j = 1
         while j < ncomponent_standard:
             for name in names:
@@ -168,6 +169,7 @@ def get_line_info(sg):
     fitter = LevMarLSQFitter()
     fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
     fit_y = fit_spec_mod(spectrum.dispersion.value)
+    ## sg.save_spectrum("test.h5")
 
     # OK now we want line properties
     line_properties = {'fitcol' : fit_spec_mod.column_density_1.value,

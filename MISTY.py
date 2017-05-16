@@ -7,7 +7,7 @@ import spectacle
 from spectacle.core.spectra import Spectrum1D
 from spectacle.modeling.models import Absorption1D
 from spectacle.core.lines import Line
-from astropy.modeling.fitting import LevMarLSQFitter
+from spectacle.modeling.fitting import LevMarFitter
 
 import getpass
 import datetime
@@ -92,14 +92,14 @@ def generate_line(ray,line,write=False,hdulist=None):
         lambda_max=lambda_max.value, dlambda=0.0001)
     sg.make_spectrum(ray,lines=line_out.name)
 
-    if write and len(sg.line_observables) > 0:
+    if write and len(sg.line_observables_dict) > 0:
     	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
     	col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     	col_list = [col1,col2,col3]
 
-    	for key in sg.line_observables[line_out.name].keys():
-    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables[line_out.name][key])
+    	for key in sg.line_observables_dict[line_out.identifier].keys():
+    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables_dict[line_out.identifier][key])
     	    col_list = np.append(col_list,col)
 
     	cols = fits.ColDefs(col_list)
@@ -116,8 +116,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables[line_out.name]['column_density'].value))
-
+        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value))
 
         ## we're also going to want data from Nick's fitting code
         ## it's going to give values for all of it's components
@@ -153,29 +152,40 @@ def get_line_info(sg):
     '''
     disp = sg.lambda_field
     flux = sg.flux_field
-    spectrum = Spectrum1D(flux, dispersion=disp)
-    line = Line(name=sg.line_list[0]['label'], \
-            lambda_0=sg.line_list[0]['wavelength'].value, \
-            f_value=sg.line_list[0]['f_value'], \
-            gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
-                                                 'f_value': True,
-                                                 'gamma': True,
-                                                 'v_doppler': False,
-                                                 'column_density': False,
-                                                })
-    spec_mod = Absorption1D(lines=[line])
+    spectrum = Spectrum1D(np.array(list(flux)), dispersion=np.array(list(disp)))
+    tot_ew = spectrum.equivalent_width()[0]
+    if tot_ew < 1.e-4:
+        print "tot_ew = ", tot_ew, " so not enough absorption!!!"
+        line_properties = {'fitcol' : np.nan,
+                           'fitb': np.nan,
+                           'fitvcen' : np.nan,
+                           'fitEW' : np.nan}
+    else:
+        # spectrum = Spectrum1D(flux, dispersion=disp)
+        print "tot_ew = ", tot_ew, " so gonna try this thing............"
+        line = Line(name=sg.line_list[0]['label'], \
+                lambda_0=sg.line_list[0]['wavelength'].value, \
+                f_value=sg.line_list[0]['f_value'], \
+                gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
+                                                     'f_value': True,
+                                                     'gamma': True,
+                                                     'v_doppler': False,
+                                                     'column_density': False,
+                                                    })
+        spec_mod = Absorption1D(lines=[line])
 
-    # Create a fitter. The default fitting routine is a LevMarLSQ.
-    fitter = LevMarLSQFitter()
-    fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
-    fit_y = fit_spec_mod(spectrum.dispersion.value)
-    ## sg.save_spectrum("test.h5")
+        # Create a fitter. The default fitting routine is a LevMarLSQ.
+        fitter = LevMarFitter()
+        fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
+        # fit_y = fit_spec_mod(spectrum.dispersion.value)
+        fit_y = fit_spec_mod(spectrum.dispersion)
+        ## sg.save_spectrum("test.h5")
 
-    # OK now we want line properties
-    line_properties = {'fitcol' : fit_spec_mod.column_density_1.value,
-                       'fitb': fit_spec_mod.v_doppler_1.value,
-                       'fitvcen' : fit_spec_mod.lambda_0_1.value,
-                       'fitEW' : fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0]}
+        # OK now we want line properties
+        line_properties = {'fitcol' : fit_spec_mod.column_density_1.value,
+                           'fitb': fit_spec_mod.v_doppler_1.value,
+                           'fitvcen' : fit_spec_mod.lambda_0_1.value,
+                           'fitEW' : fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0]}
 
     return line_properties
 

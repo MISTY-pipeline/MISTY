@@ -85,8 +85,12 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
-    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 10
-    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 10
+    if line_out.name == "H I 1216":
+        padding = 5.
+    else:
+        padding = 5.
+    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - padding
+    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + padding
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, \
         lambda_max=lambda_max.value, dlambda=0.0001)
@@ -154,12 +158,12 @@ def get_line_info(sg):
     flux = sg.flux_field
     spectrum = Spectrum1D(np.array(list(flux)), dispersion=np.array(list(disp)))
     tot_ew = spectrum.equivalent_width()[0]
-    if tot_ew < 1.e-4:
-        print "tot_ew = ", tot_ew, " so not enough absorption!!!"
-        line_properties = {'fitcol' : np.nan,
-                           'fitb': np.nan,
-                           'fitlcen' : np.nan,
-                           'fitEW' : np.nan}
+    if tot_ew < 1.e-4 or tot_ew > 2.:
+        print "tot_ew = ", tot_ew, " so not enough OR MAYBE TOO MUCH absorption!!!"
+        line_properties = {'fitcol' : (np.nan,""),
+                           'fitb': (np.nan,""),
+                           'fitlcen' : (np.nan,""),
+                           'fitEW' : (np.nan,"")}
     else:
         # spectrum = Spectrum1D(flux, dispersion=disp)
         print "tot_ew = ", tot_ew, " so gonna try this thing............"

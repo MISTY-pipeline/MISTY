@@ -5,6 +5,7 @@
 
 ### Acknowledgments:
 * Supported by [HST AR #13919](http://adsabs.harvard.edu/abs/2014hst..prop13919P)
+* Makes heavy use of [yt](yt-project.org), [Trident](http://trident-project.org/), and [astropy](http://www.astropy.org/).
 
 #### File name convention:
 * hlsp_misty_sim_halo_output_geometry_version_type.fits

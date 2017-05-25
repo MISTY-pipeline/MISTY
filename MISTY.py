@@ -28,8 +28,8 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,**kwargs):
     prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
     prihdr['PAPER'] = "Corlies et al. (2017) ApJ, ###, ###"
     prihdr['EUVB'] = "HM12" ## probably shouldn't be hardcoded
-    prihdr['IMPACT'] = kwargs.get("impact","undef")
-    prihdr['ANGLE'] = kwargs.get("angle","undef")
+    prihdr['IMPACT'] = (kwargs.get("impact","undef"), "kpc")
+    prihdr['ANGLE'] = (kwargs.get("angle","undef"), "radians")
 
     lines = ldb.parse_subset(lines)
 
@@ -85,8 +85,8 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
-    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 5
-    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 5
+    lambda_min = lambda_rest * (1+min(ar['redshift_eff'])) - 10
+    lambda_max = lambda_rest * (1+max(ar['redshift_eff'])) + 10
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, \
         lambda_max=lambda_max.value, dlambda=0.0001)
@@ -106,7 +106,7 @@ def generate_line(ray,line,write=False,hdulist=None):
     	sghdr = fits.Header()
     	sghdr['LINENAME'] = line_out.name
         print "----->>>>using ", line_out.name, "as LINENAME, whereas ", line, " was passed. Change?"
-    	sghdr['RESTWAVE'] = line_out.wavelength
+    	sghdr['RESTWAVE'] = (line_out.wavelength, "Angstroms")
     	sghdr['F_VALUE'] = line_out.f_value
     	sghdr['GAMMA'] = line_out.gamma
 
@@ -116,7 +116,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        sghdr['TOT_COLUMN'] = np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value))
+        sghdr['TOT_COLUMN'] = (np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value)), "cm^-2")
 
         ## we're also going to want data from Nick's fitting code
         ## it's going to give values for all of it's components

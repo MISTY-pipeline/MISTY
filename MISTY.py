@@ -116,7 +116,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_HDENS'] = -9999.
         sghdr['SIM_TAU_TEMP'] = -9999.
         sghdr['SIM_TAU_METAL'] = -9999.
-        sghdr['TOT_COLUMN'] = (np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value)), "cm^-2")
+        sghdr['TOT_COLUMN'] = (np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value)), "log cm^-2")
 
         ## we're also going to want data from Nick's fitting code
         ## it's going to give values for all of it's components
@@ -127,7 +127,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         print line_properties
         for key in line_properties:
             stringin = key+str(0)
-            if np.isnan(line_properties[key]):
+            if np.isnan(line_properties[key][0]):
                 sghdr[stringin] = "NaN"
             else:
                 sghdr[stringin] = line_properties[key]
@@ -158,7 +158,7 @@ def get_line_info(sg):
         print "tot_ew = ", tot_ew, " so not enough absorption!!!"
         line_properties = {'fitcol' : np.nan,
                            'fitb': np.nan,
-                           'fitvcen' : np.nan,
+                           'fitlcen' : np.nan,
                            'fitEW' : np.nan}
     else:
         # spectrum = Spectrum1D(flux, dispersion=disp)
@@ -174,7 +174,7 @@ def get_line_info(sg):
                                                     })
         spec_mod = Absorption1D(lines=[line])
 
-        # Create a fitter. The default fitting routine is a LevMarLSQ.
+        # Create a fitter. The default fitting routine is a LevMar.
         fitter = LevMarFitter()
         fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
         # fit_y = fit_spec_mod(spectrum.dispersion.value)
@@ -182,10 +182,10 @@ def get_line_info(sg):
         ## sg.save_spectrum("test.h5")
 
         # OK now we want line properties
-        line_properties = {'fitcol' : fit_spec_mod.column_density_1.value,
-                           'fitb': fit_spec_mod.v_doppler_1.value,
-                           'fitvcen' : fit_spec_mod.lambda_0_1.value,
-                           'fitEW' : fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0]}
+        line_properties = {'fitcol' : (fit_spec_mod.column_density_1.value, "log cm^-2"),
+                           'fitb': (fit_spec_mod.v_doppler_1.value, "km/s"),
+                           'fitlcen' : (fit_spec_mod.lambda_0_1.value, "Angstrom"),
+                           'fitEW' : (fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0], "Angstrom")}
 
     return line_properties
 

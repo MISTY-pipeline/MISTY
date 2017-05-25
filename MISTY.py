@@ -158,28 +158,21 @@ def get_line_info(sg):
     flux = sg.flux_field
     spectrum = Spectrum1D(np.array(list(flux)), dispersion=np.array(list(disp)))
     tot_ew = spectrum.equivalent_width()[0]
-    if tot_ew < 1.e-4 or tot_ew > 2.:
-        print "tot_ew = ", tot_ew, " so not enough OR MAYBE TOO MUCH absorption!!!"
-        line_properties = {'fitcol' : (np.nan,""),
-                           'fitb': (np.nan,""),
-                           'fitlcen' : (np.nan,""),
-                           'fitEW' : (np.nan,"")}
-    else:
-        # spectrum = Spectrum1D(flux, dispersion=disp)
-        print "tot_ew = ", tot_ew, " so gonna try this thing............"
-        line = Line(name=sg.line_list[0]['label'], \
-                lambda_0=sg.line_list[0]['wavelength'].value, \
-                f_value=sg.line_list[0]['f_value'], \
-                gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
-                                                     'f_value': True,
-                                                     'gamma': True,
-                                                     'v_doppler': False,
-                                                     'column_density': False,
-                                                    })
-        spec_mod = Absorption1D(lines=[line])
+    print "FYI, tot_ew = ", tot_ew
+    line = Line(name=sg.line_list[0]['label'], \
+            lambda_0=sg.line_list[0]['wavelength'].value, \
+            f_value=sg.line_list[0]['f_value'], \
+            gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
+                                                 'f_value': True,
+                                                 'gamma': True,
+                                                 'v_doppler': False,
+                                                 'column_density': False,
+                                                })
+    spec_mod = Absorption1D(lines=[line])
 
-        # Create a fitter. The default fitting routine is a LevMar.
-        fitter = LevMarFitter()
+    # Create a fitter. The default fitting routine is a LevMar.
+    fitter = LevMarFitter()
+    try:
         fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
         # fit_y = fit_spec_mod(spectrum.dispersion.value)
         fit_y = fit_spec_mod(spectrum.dispersion)
@@ -190,6 +183,12 @@ def get_line_info(sg):
                            'fitb': (fit_spec_mod.v_doppler_1.value, "km/s"),
                            'fitlcen' : (fit_spec_mod.lambda_0_1.value, "Angstrom"),
                            'fitEW' : (fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0], "Angstrom")}
+    except:
+        line_properties = {'fitcol' : (np.nan,""),
+                           'fitb': (np.nan,""),
+                           'fitlcen' : (np.nan,""),
+                           'fitEW' : (np.nan,"")}
+
 
     return line_properties
 

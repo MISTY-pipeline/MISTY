@@ -1,5 +1,5 @@
 # The MAST Interface to Synthetic Telescopes with yt (MISTY)
-### for observing simulations of the circumgalactic medium in absorption
+## for observing simulations of the circumgalactic medium in absorption
 ### Molly Peeples, Lauren Corlies, Nicholas Earl
 ### May 25, 2017
 
@@ -88,4 +88,4 @@ TFORM7  = 'E       '
 TTYPE8  = 'sim_thermal_width'                                                   
 TFORM8  = 'E       '                      
 
-The "fit" parameters correspond to the column densities, equivalent widths, Doppler parameters, etc., as found by spectacle; the different numbers are supposed to be for different detected components. This is still being worked on. Note that the TTYPEs at the end are the arrays included in the extension; the wavelength, tau, and flux arrays are the synthetic data of most interest.
+The "fit" parameters correspond to the column densities, equivalent widths, Doppler parameters, etc., as found by spectacle; the different numbers are supposed to be for different detected components. This is still being worked on. Note that the TTYPEs at the end are the arrays included in the extension; the wavelength, tau, and flux arrays are the synthetic data of most interest. The flux is normalized to have continuum = 1.

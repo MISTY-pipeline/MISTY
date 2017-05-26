@@ -1,7 +1,7 @@
 # The MAST Interface to Synthetic Telescopes with yt (MISTY)
 ## for observing simulations of the circumgalactic medium in absorption
 ### Molly Peeples, Lauren Corlies, Nicholas Earl
-### May 25, 2017
+### May 26, 2017
 
 ### Acknowledgments:
 * Supported by [HST AR #13919](http://adsabs.harvard.edu/abs/2014hst..prop13919P)
@@ -22,6 +22,7 @@ These follow, as closely as possible, the [HSLP file naming conventions from MAS
 
 So, e.g., a given file might look like:
 Filename: spectra/hlsp_misty_foggie_halo008508_rd0042_i101.9-a1.94_v1_los.fits
+
 No.    Name         Type      Cards   Dimensions   Format
 0  PRIMARY     PrimaryHDU      22   ()      
 1  PARAMS      BinTableHDU     15   608R x 2C   [50A, 50A]   
@@ -33,9 +34,10 @@ No.    Name         Type      Cards   Dimensions   Format
 7  C IV 1548   BinTableHDU     57   111254R x 9C   [E, E, E, E, E, E, E, E, E]   
 8  O VI 1032   BinTableHDU     57   107501R x 9C   [E, E, E, E, E, E, E, E, E]   
 
-A thing to be done is to combine extensions 0 and 1 in a clean way, so the following extensions correspond to the LINE_# in the primary header.
+A thing to be done is to combine extensions 0 and 1 in a clean way, so the following extensions correspond to the LINE_no in the primary header.
 
 In HDU 0, the header contains the following useful cards, for example (and these need to be cleaned up...):
+
 AUTHOR  = 'molly   '                                                            
 DATE    = '2017-05-25T18:36:03.110700'                                          
 RAYSTART= '[ 0.48954376  0.47206     0.5078625 ] unitary'                       
@@ -56,6 +58,7 @@ LINE_6  = 'C IV 1548'
 LINE_7  = 'O VI 1032'                                                                   
 
 HDU 2-N are then the individual lines, with header formats like:
+
 LINENAME= 'H I 1216'                                                            
 RESTWAVE=              1215.67                                                  
 F_VALUE =                0.416                                                  

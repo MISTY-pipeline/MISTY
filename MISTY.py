@@ -28,7 +28,7 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,**kwargs):
     prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
     prihdr['PAPER'] = "Corlies et al. (2017) ApJ, ###, ###"
     prihdr['EUVB'] = "HM12" ## probably shouldn't be hardcoded
-    prihdr['IMPACT'] = (kwargs.get("impact","undef"), "kpc")
+    prihdr['IMPACT'] = (kwargs.get("impact","undef"), "impact parameter, kpc")
     prihdr['ANGLE'] = (kwargs.get("angle","undef"), "radians")
 
     lines = ldb.parse_subset(lines)

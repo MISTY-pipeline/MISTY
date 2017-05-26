@@ -20,25 +20,40 @@ These follow, as closely as possible, the [HSLP file naming conventions from MAS
 2. Extension name is ionic transitions as listed in the primary header, following element+ion+wavelength convention (e.g., "H I 1216"). Header contains absorber information, arrays contain spectra, documented below.
 3. (and more) any other absorption lines included
 
+So, e.g., a given file might look like:
+Filename: spectra/hlsp_misty_foggie_halo008508_rd0042_i101.9-a1.94_v1_los.fits
+No.    Name         Type      Cards   Dimensions   Format
+  0.  PRIMARY     PrimaryHDU      22   ()      
+  1.  PARAMS      BinTableHDU     15   608R x 2C   [50A, 50A]   
+  2.  H I 1216    BinTableHDU     57   108837R x 9C   [E, E, E, E, E, E, E, E, E]   
+  3.  SI II 1260  BinTableHDU     57   109162R x 9C   [E, E, E, E, E, E, E, E, E]   
+  4.  C II 1335   BinTableHDU     57   109701R x 9C   [E, E, E, E, E, E, E, E, E]   
+  5.  C III 977   BinTableHDU     57   107102R x 9C   [E, E, E, E, E, E, E, E, E]   
+  6.  SI III 1207  BinTableHDU     57   108771R x 9C   [E, E, E, E, E, E, E, E, E]   
+  7.  C IV 1548   BinTableHDU     57   111254R x 9C   [E, E, E, E, E, E, E, E, E]   
+  8.  O VI 1032   BinTableHDU     57   107501R x 9C   [E, E, E, E, E, E, E, E, E]   
+
+A thing to be done is to combine extensions 0 and 1 in a clean way, so the following extensions correspond to the LINE_# in the primary header.
+
 In HDU 0, the header contains the following useful cards, for example (and these need to be cleaned up...):
 AUTHOR  = 'molly   '                                                            
-DATE    = '2017-04-26T12:15:51.768755'                                          
-RAYSTART= '[  2.17348808e+26   2.09586327e+26   2.25482004e+26] cm'             
-RAYEND  = '[  2.17348808e+26   2.09586327e+26   2.27024843e+26] cm'             
+DATE    = '2017-05-25T18:36:03.110700'                                          
+RAYSTART= '[ 0.48954376  0.47206     0.5078625 ] unitary'                       
+RAYEND  = '[ 0.48954376  0.47206     0.5113375 ] unitary'                       
 SIM_NAME= 'RD0042_ray_z_imp101.9_ang1.94_tri.h5'                                
 NLINES  = '7       '                                                            
 DOI     = 'doi.corlies2017.paper.thisistotesnotmadeup'                          
 PAPER   = 'Corlies et al. (2017) ApJ, ###, ###'                                 
 EUVB    = 'HM12    '                                                            
-IMPACT  =    101.8704386189004                                                  
-ANGLE   =    1.941119505343093                                                  
+IMPACT  =    101.8704386189004 / kpc                                            
+ANGLE   =    1.941119505343093 / radians                                        
 LINE_1  = 'H I 1216'                                                            
 LINE_2  = 'Si II 1260'                                                          
 LINE_3  = 'C II 1335'                                                           
 LINE_4  = 'C III 977'                                                           
 LINE_5  = 'Si III 1207'                                                         
 LINE_6  = 'C IV 1548'                                                           
-LINE_7  = 'O VI 1032'                                    
+LINE_7  = 'O VI 1032'                                                                   
 
 HDU 2-N are then the individual lines, with header formats like:
 LINENAME= 'H I 1216'                                                            

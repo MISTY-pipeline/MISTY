@@ -7,7 +7,7 @@ import spectacle
 from spectacle.core.spectra import Spectrum1D
 from spectacle.modeling.models import Absorption1D
 from spectacle.core.lines import Line
-from spectacle.modeling.fitting import LevMarFitter
+from spectacle.modeling.fitting import DynamicLevMarFitter
 
 import getpass
 import datetime
@@ -123,26 +123,9 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['TOT_COLUMN'] = (np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value)), "log cm^-2")
 
         ## we're also going to want data from Nick's fitting code
-        ## it's going to give values for all of it's components
-        ## for now, let's give it five and assume that many are going to be empty
-        sghdr['NCOMPONENTS'] = 5
-        # names = ['fitEW','fitcol','fitvcen','fitb','fitv90']
-        line_properties = get_line_info(sg)
-        print line_properties
-        for key in line_properties:
-            stringin = key+str(0)
-            if np.isnan(line_properties[key][0]):
-                sghdr[stringin] = "NaN"
-            else:
-                sghdr[stringin] = line_properties[key]
-        names = ['fitEW','fitcol','fitvcen','fitb']
-        ncomponent_standard = sghdr['NCOMPONENTS']
-        j = 1
-        while j < ncomponent_standard:
-            for name in names:
-                stringin = name+str(j)
-                sghdr[stringin] = -9999.
-            j = j + 1
+        lines_properties = get_line_info(sg)
+        for key in lines_properties:
+            sghdr[key] = lines_properties[key]
 
     	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name=line_out.name)
 
@@ -156,41 +139,55 @@ def get_line_info(sg):
     '''
     disp = sg.lambda_field
     flux = sg.flux_field
+    sg_line = sg.line_list[0]
     spectrum = Spectrum1D(np.array(list(flux)), dispersion=np.array(list(disp)))
     tot_ew = spectrum.equivalent_width()[0]
     print "FYI, tot_ew = ", tot_ew
-    line = Line(name=sg.line_list[0]['label'], \
-            lambda_0=sg.line_list[0]['wavelength'].value, \
-            f_value=sg.line_list[0]['f_value'], \
-            gamma=sg.line_list[0]['gamma'], fixed={'lambda_0': False,
-                                                 'f_value': True,
-                                                 'gamma': True,
-                                                 'v_doppler': False,
-                                                 'column_density': False,
-                                                })
-    spec_mod = Absorption1D(lines=[line])
-
-    # Create a fitter. The default fitting routine is a LevMar.
-    fitter = LevMarFitter()
+    # This process will find lines in the trident spectrum
+    # and assign the values set in the `defaults` dict to
+    # the new lines found.
     try:
-        fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data, maxiter=500)
-        # fit_y = fit_spec_mod(spectrum.dispersion.value)
-        fit_y = fit_spec_mod(spectrum.dispersion)
-        ## sg.save_spectrum("test.h5")
+        lines = spectrum.find_lines(threshold=0.02/max(1-spectrum.data),
+                            min_dist=10,
+                            smooth=True,
+                            interpolate=True,
+                            defaults=dict(
+                                lambda_0=sg_line['wavelength'].value,
+                                f_value=sg_line['f_value'],
+                                gamma=sg_line['gamma'],
+                                fixed={
+                                    'lambda_0': True,
+                                    'delta_v': True,
+                                    'delta_lambda': False}
+                           ))
+
+        # Create absorption Spectrum1D from line information
+        spec_mod = Absorption1D(lines=lines)
+
+        # Create a Spectrum1D object from the Absorption1D model
+        gen_spec = spec_mod(spectrum.dispersion)
+
+        # Create a fitter. The default fitting routine is a LevMar.
+        fitter = DynamicLevMarFitter()
+        fit_spec_mod = fitter(spec_mod, spectrum.dispersion, spectrum.data,
+                      maxiter=1000, initialize=False)
+
+        # Get the results of the fit
+        fit_spec = fit_spec_mod(spectrum.dispersion)
 
         # OK now we want line properties
-        line_properties = {'fitcol' : (fit_spec_mod.column_density_1.value, "log cm^-2"),
-                           'fitb': (fit_spec_mod.v_doppler_1.value, "km/s"),
-                           'fitlcen' : (fit_spec_mod.lambda_0_1.value, "Angstrom"),
-                           'fitEW' : (fit_y.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0], "Angstrom")}
-    except:
-        line_properties = {'fitcol' : (np.nan,""),
-                           'fitb': (np.nan,""),
-                           'fitlcen' : (np.nan,""),
-                           'fitEW' : (np.nan,"")}
+        NCOMP = len(fit_spec.lines)
+        lines_properties = {'NCOMP' : (NCOMP, "number of fitted components")}
+        for i in np.arange(1,NCOMP+1):
+            lines_properties['fitcol'+str(i)] = (fit_spec_mod[i].column_density[0], "log cm^-2")
+            lines_properties['fitb'+str(i)] = (fit_spec_mod[i].v_doppler[0]/100000., "km s^-1")
+            lines_properties['fitlcen'+str(i)] = (fit_spec_mod[i].lambda_0[0] + fit_spec_mod[i].delta_v[0], "Angstrom, center of component, observed wavelength")
+            lines_properties['fitEW'+str(i)] = (fit_spec.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0], "Angstrom, total equivalent width")
+    except Exception:
+        lines_properties = {'NCOMP': 0}
 
 
-    return line_properties
+    return lines_properties
 
 def write_out(hdulist,filename='spectrum.fits'):
 	hdulist.writeto(filename, overwrite=True)

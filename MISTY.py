@@ -94,7 +94,7 @@ def generate_line(ray,line,write=False,hdulist=None):
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value, \
         lambda_max=lambda_max.value, dlambda=0.0001)
-    sg.make_spectrum(ray,lines=line_out.name)
+    sg.make_spectrum(ray,lines=line_out.name, min_tau=1.e-5, store_observables=True)
 
     if write and len(sg.line_observables_dict) > 0:
     	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
@@ -102,8 +102,8 @@ def generate_line(ray,line,write=False,hdulist=None):
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
     	col_list = [col1,col2,col3]
 
-    	for key in sg.line_observables_dict[line_out.identifier].keys():
-    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables_dict[line_out.identifier][key])
+    	for key in sg.line_observables_dict[str(line_out)].keys():
+    	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables_dict[str(line_out)][key])
     	    col_list = np.append(col_list,col)
 
     	cols = fits.ColDefs(col_list)
@@ -184,6 +184,7 @@ def get_line_info(sg):
             lines_properties['fitlcen'+str(i)] = (fit_spec_mod[i].lambda_0[0] + fit_spec_mod[i].delta_v[0], "Angstrom, center of component, observed wavelength")
             lines_properties['fitEW'+str(i)] = (fit_spec.equivalent_width(x_0=fit_spec_mod.lambda_0_1)[0], "Angstrom, total equivalent width")
     except Exception:
+        print "***** --->> line finding SO did not work ****"
         lines_properties = {'NCOMP': 0}
 
 

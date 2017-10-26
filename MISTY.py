@@ -96,7 +96,7 @@ def generate_line(ray,line,write=False,hdulist=None):
         lambda_max=lambda_max.value, dlambda=0.0001)
     sg.make_spectrum(ray,lines=line_out.name, min_tau=1.e-5, store_observables=True)
 
-    if write and len(sg.line_observables_dict) > 0:
+    if write and str(line_out) in sg.line_observables_dict:
     	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
     	col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
     	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
@@ -191,5 +191,6 @@ def get_line_info(sg):
     return lines_properties
 
 def write_out(hdulist,filename='spectrum.fits'):
-	hdulist.writeto(filename, overwrite=True)
-	return ""
+    print "printing to .... " + filename
+    hdulist.writeto(filename, overwrite=True)
+    return ""

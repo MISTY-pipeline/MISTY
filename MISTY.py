@@ -97,10 +97,11 @@ def generate_line(ray,line,write=False,hdulist=None):
     sg.make_spectrum(ray,lines=line_out.name, min_tau=1.e-5, store_observables=True)
 
     if write and str(line_out) in sg.line_observables_dict:
-    	col1 = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
-    	col2 = fits.Column(name='tau', format='E', array=sg.tau_field)
-    	col3 = fits.Column(name='flux', format='E', array=sg.flux_field)
-    	col_list = [col1,col2,col3]
+    	redshift = fits.Column(name='redshift', format='E', array=(sg.lambda_field.value/lambda_rest - 1))
+    	wavelength = fits.Column(name='wavelength', format='E', array=sg.lambda_field,unit='Angstrom')
+    	tau = fits.Column(name='tau', format='E', array=sg.tau_field)
+    	flux = fits.Column(name='flux', format='E', array=sg.flux_field)
+    	col_list = [redshift, wavelength, tau, flux]
 
     	for key in sg.line_observables_dict[str(line_out)].keys():
     	    col = fits.Column(name='sim_'+key,format='E',array=sg.line_observables_dict[str(line_out)][key])

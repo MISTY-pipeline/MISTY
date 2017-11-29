@@ -21,8 +21,8 @@ def write_header(ray,start_pos=None,end_pos=None,lines=None,**kwargs):
     prihdr = fits.Header()
     prihdr['AUTHOR'] = kwargs.get("author",getpass.getuser())
     prihdr['DATE'] = datetime.datetime.now().isoformat()
-    prihdr['RAYSTART'] = str(start_pos)
-    prihdr['RAYEND'] = str(end_pos)
+    prihdr['RAYSTART'] = str(start_pos[0]) + "," + str(start_pos[1]) + "," + str(start_pos[2])
+    prihdr['RAYEND'] = str(end_pos[0]) + "," + str(end_pos[1]) + "," + str(end_pos[2])
     prihdr['SIM_NAME'] = ray.basename
     prihdr['NLINES'] = str(len(np.array(lines)))
     prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
@@ -70,7 +70,7 @@ def write_parameter_file(ds,filename=None,hdulist=None):
 
     return sghdu
 
-def generate_line(ray,line,write=False,hdulist=None):
+def generate_line(ray,line,write=False,use_spectacle=True,hdulist=None):
     '''
     input: a lightray and a line; writes info to extension of hdulist
     '''
@@ -123,10 +123,11 @@ def generate_line(ray,line,write=False,hdulist=None):
         sghdr['SIM_TAU_METAL'] = -9999.
         sghdr['TOT_COLUMN'] = (np.log10(np.sum(sg.line_observables_dict[line_out.identifier]['column_density'].value)), "log cm^-2")
 
-        ## we're also going to want data from Nick's fitting code
-        lines_properties = get_line_info(sg)
-        for key in lines_properties:
-            sghdr[key] = lines_properties[key]
+        ## we're also going to want data from spectacle
+        if use_spectacle:
+            lines_properties = get_line_info(sg)
+            for key in lines_properties:
+                sghdr[key] = lines_properties[key]
 
     	sghdu = fits.BinTableHDU.from_columns(cols,header=sghdr,name=line_out.name)
 
@@ -138,7 +139,11 @@ def get_line_info(sg):
     '''
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
-    disp = sg.lambda_field
+    print """ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~      DOING A TOTAL HACK RE REDSHIFTS ~~~~~~~~
+~~~~~~~~  ASSUMING z=2 FOR FITTING LINES BECAUSE GARRRRRGHHHHHHH ~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~ """
+    disp = sg.lambda_field / (1+ 2.)
     flux = sg.flux_field
     sg_line = sg.line_list[0]
     spectrum = Spectrum1D(np.array(list(flux)), dispersion=np.array(list(disp)))

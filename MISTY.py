@@ -182,6 +182,7 @@ def get_line_info(sg):
         # OK now we want line properties
         NCOMP = len(fit_spec.lines)
         lines_properties = {'NCOMP' : (NCOMP, "number of fitted components")}
+        lines_properties['totEW'] = (tot_ew, "Angstroms")
         for i in np.arange(1,NCOMP+1):
             lines_properties['fitcol'+str(i)] = (fit_spec_mod[i].column_density[0], "log cm^-2")
             lines_properties['fitb'+str(i)] = (fit_spec_mod[i].v_doppler[0]/100000., "km s^-1")

@@ -214,6 +214,7 @@ def get_line_info(sg):
                 'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
                 'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
             })
+
     except Exception:
         print("***** --->> line finding SO did not work ****")
         lines_properties = {'NCOMP': 0}

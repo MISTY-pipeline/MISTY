@@ -208,8 +208,6 @@ def get_line_info(sg):
         'NCOMP': len(line_mods)
     }
 
-    print("Found {} lines.".format(len(line_mods)))
-
     for i, line in enumerate(line_mods):
         dv90 = line.dv90()
         fwhm = line.fwhm()

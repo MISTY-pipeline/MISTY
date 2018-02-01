@@ -83,7 +83,7 @@ def write_parameter_file(ds, filename=None, hdulist=None):
     return sghdu
 
 
-def generate_line(ray, line, write=False, use_spectacle=True, hdulist=None):
+def generate_line(ray, line, redshift=0.0, write=False, use_spectacle=True, hdulist=None):
     '''
     input: a lightray and a line; writes info to extension of hdulist
     '''
@@ -150,7 +150,7 @@ def generate_line(ray, line, write=False, use_spectacle=True, hdulist=None):
 
         # we're also going to want data from spectacle
         if use_spectacle:
-            lines_properties = get_line_info(sg)
+            lines_properties = get_line_info(sg, redshift)
             for key in lines_properties:
                 sghdr[key] = lines_properties[key]
 
@@ -162,7 +162,7 @@ def generate_line(ray, line, write=False, use_spectacle=True, hdulist=None):
     return sg
 
 
-def get_line_info(sg):
+def get_line_info(sg, redshift):
     '''
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
@@ -179,7 +179,7 @@ def get_line_info(sg):
     # the new lines found.
     # try:
 
-    # Create a dictionary to hold the default values we want 
+    # Create a dictionary to hold the default values we want
     # the lines to have
     default_values = dict(
         lambda_0=sg_line['wavelength'].value * u.Unit('Angstrom'),
@@ -193,7 +193,7 @@ def get_line_info(sg):
     # result to the data.
     spec_mod = LineFinder(disp, flux,
                          ion_name=sg_line,
-                         redshift=0,  # This could be tied to sg, e.g.
+                         redshift=redshift,  # This could be tied to sg, e.g.
                          data_type='flux',
                          defaults=default_values,
                          threshold=0.1).fit()

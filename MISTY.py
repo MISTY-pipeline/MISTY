@@ -10,6 +10,8 @@ from astropy.io import fits
 from astropy.modeling.fitting import LevMarLSQFitter
 
 import trident
+
+os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
 from spectacle.analysis.line_finder import LineFinder
 from spectacle.core.spectrum import Spectrum1D
 
@@ -83,7 +85,7 @@ def write_parameter_file(ds, filename=None, hdulist=None):
     return sghdu
 
 
-def generate_line(ray, line, redshift=0.0, write=False, use_spectacle=True, hdulist=None):
+def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist=None):
     '''
     input: a lightray and a line; writes info to extension of hdulist
     '''
@@ -150,7 +152,7 @@ def generate_line(ray, line, redshift=0.0, write=False, use_spectacle=True, hdul
 
         # we're also going to want data from spectacle
         if use_spectacle:
-            lines_properties = get_line_info(sg, redshift)
+            lines_properties = get_line_info(sg, zsnap)
             for key in lines_properties:
                 sghdr[key] = lines_properties[key]
 
@@ -169,7 +171,7 @@ def get_line_info(sg, redshift):
     import astropy.units as u
     from spectacle.analysis.line_finder import LineFinder
 
-    disp = sg.lambda_field / (1 + 2.) * u.Unit('Angstrom')
+    disp = sg.lambda_field * u.Unit('Angstrom')
     flux = sg.flux_field
     tau = sg.tau_field
     sg_line = sg.line_list[0]
@@ -193,10 +195,9 @@ def get_line_info(sg, redshift):
     # result to the data.
     spec_mod = LineFinder(disp, flux,
                          ion_name=sg_line,
-                         redshift=redshift,  # This could be tied to sg, e.g.
+                         redshift=redshift,
                          data_type='flux',
-                         defaults=default_values,
-                         threshold=0.1).fit()
+                         defaults=default_values).fit()
     fitter = LevMarLSQFitter()
     fit_spec_mod = fitter(spec_mod, disp, flux, maxiter=2000)
 

@@ -13,6 +13,7 @@ import trident
 
 os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
 from spectacle.analysis.line_finder import LineFinder
+from spectacle.analysis.statistics import delta_v_90, equivalent_width
 from spectacle.core.spectrum import Spectrum1D
 
 # ldb = trident.LineDatabase('lines.txt')
@@ -199,7 +200,7 @@ def get_line_info(sg, redshift):
                          data_type='flux',
                          defaults=default_values).fit()
     fitter = LevMarLSQFitter()
-    fit_spec_mod = fitter(spec_mod, disp, flux, maxiter=2000)
+    fit_spec_mod = fitter(spec_mod.flux, disp, flux, maxiter=2000)
 
     # This will be more user-friendly in the future: get all the Voigt
     # profiles that make up this spectrum model.
@@ -209,18 +210,42 @@ def get_line_info(sg, redshift):
         'NCOMP': len(line_mods)
     }
 
-    for i, line in enumerate(line_mods):
-        dv90 = line.dv90()
-        fwhm = line.fwhm()
+    # Calculate total equivalent width
+    tot_ew = equivalent_width(disp, flux, continuum=1.0, center=default_values['lambda_0'])
+
+    line_properties.update({
+        'totEW': (tot_ew.value, tot_ew.unit.to_string())
+    })
+
+    # Loop over identified absorption regions and calculate the ew and dv90
+    # for the region
+    for i, reg in enumerate(spec_mod.regions):
+        mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
+
+        reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0, 
+                              center=default_values['lambda_0'])
+        reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0,
+                                  center=default_values['lambda_0'])
 
         line_properties.update({
-            'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),
-            'fitb' + str(i): (line.v_doppler.value, line.v_doppler.unit.to_string()),
-            'fitlcen' + str(i): (line.lambda_0.value + line.delta_lambda.value, line.lambda_0.unit.to_string()),
-            # 'fitEW' + str(i): (line.equivalent_width.value, line.equivalent_width.unit.to_string())
-            'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
-            'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
+            'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
+            'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
+
+        # Loop over individual ions and calculation per-ion properties
+        for i, line in enumerate(line_mods):
+            dv90 = line.dv90()
+            fwhm = line.fwhm()
+            ew = line.equivalent_width()
+
+            line_properties.update({
+                'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),
+                'fitb' + str(i): (line.v_doppler.value, line.v_doppler.unit.to_string()),
+                'fitlcen' + str(i): (line.lambda_0.value + line.delta_lambda.value, line.lambda_0.unit.to_string()),
+                'fitEW' + str(i): (ew.value, ew.unit.to_string()),
+                'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
+                'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
+            })
 
     # except Exception:
     #     print("***** --->> line finding SO did not work ****")

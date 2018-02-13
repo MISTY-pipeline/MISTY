@@ -219,7 +219,7 @@ def get_line_info(sg, redshift):
 
     # Loop over identified absorption regions and calculate the ew and dv90
     # for the region
-    for reg in spec_mod.regions:
+    for i, reg in enumerate(spec_mod.regions):
         mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
 
         reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0, 
@@ -228,8 +228,8 @@ def get_line_info(sg, redshift):
                                   center=default_values['lambda_0'])
 
         line_properties.update({
-            'regEW': (reg_ew.value, reg_ew.unit.to_string()),
-            'regdv90': (reg_dv90.value, reg_dv90.unit.to_string())
+            'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
+            'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
 
         # Loop over individual ions and calculation per-ion properties

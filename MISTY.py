@@ -204,16 +204,6 @@ def get_line_info(sg, redshift):
     fitter = LevMarLSQFitter()
     fit_spec_mod = fitter(spec_mod.flux, disp, flux, maxiter=2000)
 
-    import matplotlib.pyplot as plt
-    from uuid import uuid4
-
-    f, ax = plt.subplots()
-
-    ax.plot(disp, flux)
-    ax.plot(disp, fit_spec_mod(disp))
-
-    plt.savefig("{}.png".format(uuid4()))
-
     # This will be more user-friendly in the future: get all the Voigt
     # profiles that make up this spectrum model.
     line_mods = [x for x in fit_spec_mod if hasattr(x, 'lambda_0')]

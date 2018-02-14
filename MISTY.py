@@ -15,8 +15,8 @@ os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
 from spectacle.analysis.line_finder import LineFinder
 from spectacle.core.spectrum import Spectrum1D
 
-# ldb = trident.LineDatabase('lines.txt')
-ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
+ldb = trident.LineDatabase('lines.txt')
+# ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
 
 
 def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
@@ -94,8 +94,8 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
             'Must pass HDUList in order to write. Call write_header first.')
 
     if not isinstance(line, trident.Line):
-        # ldb = trident.LineDatabase('lines.txt')
-        ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
+        ldb = trident.LineDatabase('lines.txt')
+        # ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
         line_out = ldb.parse_subset(line)
         print(line, line_out)
         line_out = line_out[0]
@@ -112,8 +112,8 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value,
                                    lambda_max=lambda_max.value,
                                    dlambda=0.0001,
-                                #    line_database='lines.txt'
-                                   line_database='atom_wave_gamma_f.dat'
+                                   line_database='lines.txt'
+                                #   line_database='atom_wave_gamma_f.dat'
                                    )
     sg.make_spectrum(ray, lines=line_out.name, min_tau=1.e-5,
                      store_observables=True)
@@ -140,6 +140,7 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
         sghdr['RESTWAVE'] = (line_out.wavelength, "Angstroms")
         sghdr['F_VALUE'] = line_out.f_value
         sghdr['GAMMA'] = line_out.gamma
+        print ("f = ", line_out.f_value)
 
         # want to leave blank spaces now for values that we're expecting to generate for MAST
         # first let's add some spaces for the simulated, tau-weighted values!
@@ -197,6 +198,7 @@ def get_line_info(sg, redshift):
                          ion_name=sg_line,
                          redshift=redshift,
                          data_type='flux',
+                         threshold=0.01,  ## flux decrement has to be > threshold; default 0.01
                          defaults=default_values).fit()
     fitter = LevMarLSQFitter()
     fit_spec_mod = fitter(spec_mod, disp, flux, maxiter=2000)

@@ -233,20 +233,20 @@ def get_line_info(sg, redshift):
             'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
 
-        # Loop over individual ions and calculation per-ion properties
-        for i, line in enumerate(line_mods):
-            dv90 = line.delta_v_90(disp)
-            fwhm = line.fwhm()
-            ew = line.equivalent_width(disp)
+    # Loop over individual ions and calculate per-ion properties
+    for i, line in enumerate(line_mods):
+        dv90 = line.delta_v_90()
+        fwhm = line.fwhm()
+        ew = line.equivalent_width()
 
-            line_properties.update({
-                'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),
-                'fitb' + str(i): (line.v_doppler.value, line.v_doppler.unit.to_string()),
-                'fitlcen' + str(i): (line.lambda_0.value + line.delta_lambda.value, line.lambda_0.unit.to_string()),
-                'fitEW' + str(i): (ew.value, ew.unit.to_string()),
-                'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
-                'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
-            })
+        line_properties.update({
+            'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),
+            'fitb' + str(i): (line.v_doppler.value, line.v_doppler.unit.to_string()),
+            'fitlcen' + str(i): (line.lambda_0.value + line.delta_lambda.value, line.lambda_0.unit.to_string()),
+            'fitEW' + str(i): (ew.value, ew.unit.to_string()),
+            'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
+            'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
+        })
 
     # except Exception:
     #     print("***** --->> line finding SO did not work ****")

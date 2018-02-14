@@ -213,7 +213,7 @@ def get_line_info(sg, redshift):
     }
 
     # Calculate total equivalent width
-    tot_ew = equivalent_width(disp, flux, continuum=1.0, center=default_values['lambda_0'])
+    tot_ew = equivalent_width(disp, flux, continuum=1.0)
 
     line_properties.update({
         'totEW': (tot_ew.value, tot_ew.unit.to_string())
@@ -226,8 +226,7 @@ def get_line_info(sg, redshift):
 
         reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0, 
                               center=default_values['lambda_0'])
-        reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0,
-                                  center=default_values['lambda_0'])
+        reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0)
 
         line_properties.update({
             'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
@@ -236,9 +235,9 @@ def get_line_info(sg, redshift):
 
         # Loop over individual ions and calculation per-ion properties
         for i, line in enumerate(line_mods):
-            dv90 = line.dv90()
+            dv90 = line.delta_v_90(disp)
             fwhm = line.fwhm()
-            ew = line.equivalent_width()
+            ew = line.equivalent_width(disp)
 
             line_properties.update({
                 'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),

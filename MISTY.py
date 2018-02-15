@@ -160,7 +160,7 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
                                             lambda_0=sg.line_list[0]['wavelength'].value, \
                                             f_value=sg.line_list[0]['f_value'], \
                                             gamma=sg.line_list[0]['gamma'], \
-                                            ion_name=sg.line_list[0])
+                                            ion_name=line_out.name)
             for key in lines_properties:
                 sghdr[key] = lines_properties[key]
 
@@ -183,7 +183,7 @@ def get_line_info(disp, flux, **kwargs):
     tau = kwargs.get("tau", -1.0*np.log(flux))  ## if you aren't passing tau in,
                                                 ## you probably don't want to solve using tau
     disp = disp * u.Unit('Angstrom')
-    
+
     ## if line info is not passed in, assume Lya
     ion_name = kwargs.get("ion_name", "H I 1216")
     lambda_0 = kwargs.get("lambda_0", 1215.6701)
@@ -268,6 +268,6 @@ def get_line_info(disp, flux, **kwargs):
 
 
 def write_out(hdulist, filename='spectrum.fits'):
-    print("printing to .... " + filename)
+    print("saving fits file to .... " + filename)
     hdulist.writeto(filename, overwrite=True, output_verify='fix')
     return ""

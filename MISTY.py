@@ -154,7 +154,13 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
 
         # we're also going to want data from spectacle
         if use_spectacle:
-            lines_properties = get_line_info(sg, zsnap)
+            print(sg.line_list[0])
+            lines_properties = get_line_info(sg.lambda_field, sg.flux_field, \
+                                            tau=sg.tau_field, redshift=zsnap, \
+                                            lambda_0=sg.line_list[0]['wavelength'].value, \
+                                            f_value=sg.line_list[0]['f_value'], \
+                                            gamma=sg.line_list[0]['gamma'], \
+                                            ion_name=sg.line_list[0])
             for key in lines_properties:
                 sghdr[key] = lines_properties[key]
 
@@ -166,17 +172,23 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     return sg
 
 
-def get_line_info(sg, redshift):
+def get_line_info(disp, flux, **kwargs):
     '''
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
     import astropy.units as u
     from spectacle.analysis.line_finder import LineFinder
 
-    disp = sg.lambda_field * u.Unit('Angstrom')
-    flux = sg.flux_field
-    tau = sg.tau_field
-    sg_line = sg.line_list[0]
+    redshift = kwargs.get("redshift", 0.0)
+    tau = kwargs.get("tau", -1.0*np.log(flux))  ## if you aren't passing tau in,
+                                                ## you probably don't want to solve using tau
+    disp = disp * u.Unit('Angstrom')
+    
+    ## if line info is not passed in, assume Lya
+    ion_name = kwargs.get("ion_name", "H I 1216")
+    lambda_0 = kwargs.get("lambda_0", 1215.6701)
+    f_value = kwargs.get("f_value", 0.416400)
+    gamma = kwargs.get("gamma", 6.265e8)
 
     # This process will find lines in the trident spectrum
     # and assign the values set in the `defaults` dict to
@@ -186,9 +198,9 @@ def get_line_info(sg, redshift):
     # Create a dictionary to hold the default values we want
     # the lines to have
     default_values = dict(
-        lambda_0=sg_line['wavelength'].value * u.Unit('Angstrom'),
-        f_value=sg_line['f_value'],
-        gamma=sg_line['gamma'],
+        lambda_0=lambda_0 * u.Unit('Angstrom'),
+        f_value=f_value,
+        gamma=gamma,
         fixed={'lambda_0': True,
                 'delta_v': True,
                 'delta_lambda': False})
@@ -196,7 +208,7 @@ def get_line_info(sg, redshift):
     # Have the line finder attempt to find absorption features. Fit the
     # result to the data.
     spec_mod = LineFinder(disp, flux,
-                         ion_name=sg_line,
+                         ion_name=ion_name,
                          redshift=redshift,
                          data_type='flux',
                          threshold=0.01,  ## flux decrement has to be > threshold; default 0.01
@@ -224,7 +236,7 @@ def get_line_info(sg, redshift):
     for i, reg in enumerate(spec_mod.regions):
         mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
 
-        reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0, 
+        reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0,
                               center=default_values['lambda_0'])
         reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0)
 

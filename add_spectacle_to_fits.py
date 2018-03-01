@@ -12,6 +12,9 @@ import MISTY
 import numpy as np
 from astropy.io import fits
 
+import glob
+import os
+
 def add_spectacle_to_fits(old_fits_name, new_fits_name):
     orig_hdu = fits.open(old_fits_name)
 
@@ -86,3 +89,13 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name):
 
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')
+
+
+if __name__ == "__main__":
+
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v3_los.fits'))
+    dataset_list = long_dataset_list[0:10]
+
+    for filename in dataset_list:
+        print('adding spectacle to ', filename)
+        add_spectacle_to_fits(filename, filename)

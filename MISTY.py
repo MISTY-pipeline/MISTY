@@ -8,6 +8,7 @@ import time
 import numpy as np
 from astropy.io import fits
 from astropy.modeling.fitting import LevMarLSQFitter
+import astropy.units as u
 
 import trident
 
@@ -15,10 +16,10 @@ os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
 from spectacle.analysis.line_finder import LineFinder
 from spectacle.analysis.statistics import delta_v_90, equivalent_width
 from spectacle.core.spectrum import Spectrum1D
+from spectacle.modeling import Resample
 
 ldb = trident.LineDatabase('lines.txt')
 # ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
-
 
 def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     # begin making fits header
@@ -86,10 +87,11 @@ def write_parameter_file(ds, filename=None, hdulist=None):
     return sghdu
 
 
-def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist=None):
+def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist=None, **kwargs):
     '''
     input: a lightray and a line; writes info to extension of hdulist
     '''
+    resample = kwargs.get('resample', False)
     if write and type(hdulist) != fits.hdu.hdulist.HDUList:
         raise ValueError(
             'Must pass HDUList in order to write. Call write_header first.')
@@ -120,13 +122,17 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
                      store_observables=True)
 
     if write and str(line_out) in sg.line_observables_dict:
-        redshift = fits.Column(name='redshift', format='E',
-                               array=(sg.lambda_field.value / lambda_rest - 1))
+        tau = sg.tau_field
+        flux = sg.flux_field
+        disp = sg.lambda_field
+        redshift = (sg.lambda_field.value / lambda_rest - 1)
+
+        z_col = fits.Column(name='redshift', format='E', array=redshift)
         wavelength = fits.Column(name='wavelength', format='E',
-                                 array=sg.lambda_field, unit='Angstrom')
-        tau = fits.Column(name='tau', format='E', array=sg.tau_field)
-        flux = fits.Column(name='flux', format='E', array=sg.flux_field)
-        col_list = [redshift, wavelength, tau, flux]
+                                 array=disp, unit='Angstrom')
+        tau_col = fits.Column(name='tau', format='E', array=tau)
+        flux_col = fits.Column(name='flux', format='E', array=flux)
+        col_list = [z_col, wavelength, tau_col, flux_col]
 
         for key in sg.line_observables_dict[str(line_out)].keys():
             col = fits.Column(name='sim_' + key, format='E',
@@ -155,7 +161,8 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
         # we're also going to want data from spectacle
         if use_spectacle:
             print(sg.line_list[0])
-            lines_properties = get_line_info(sg.lambda_field, sg.flux_field, \
+
+            lines_properties = get_line_info(disp, flux, \
                                             tau=sg.tau_field, redshift=zsnap, \
                                             lambda_0=sg.line_list[0]['wavelength'].value, \
                                             f_value=sg.line_list[0]['f_value'], \
@@ -179,6 +186,8 @@ def get_line_info(disp, flux, **kwargs):
     import astropy.units as u
     from spectacle.analysis.line_finder import LineFinder
 
+
+    threshold = kwargs.get('threshold', 0.01)
     redshift = kwargs.get("redshift", 0.0)
     tau = kwargs.get("tau", -1.0*np.log(flux))  ## if you aren't passing tau in,
                                                 ## you probably don't want to solve using tau
@@ -193,7 +202,6 @@ def get_line_info(disp, flux, **kwargs):
     # This process will find lines in the trident spectrum
     # and assign the values set in the `defaults` dict to
     # the new lines found.
-    # try:
 
     # Create a dictionary to hold the default values we want
     # the lines to have
@@ -207,12 +215,15 @@ def get_line_info(disp, flux, **kwargs):
 
     # Have the line finder attempt to find absorption features. Fit the
     # result to the data.
+    print('*~*~*~*~*~> setting up the LineFinder *~*~*~*~*~>')
+    print('length of arrays:', len(disp))
     spec_mod = LineFinder(disp, flux,
                          ion_name=ion_name,
                          redshift=redshift,
                          data_type='flux',
-                         threshold=0.01,  ## flux decrement has to be > threshold; default 0.01
+                         threshold=threshold,  ## flux decrement has to be > threshold; default 0.01
                          defaults=default_values).fit()
+    print('*~*~*~*~*~> running the fitter now *~*~*~*~*~>')
     fitter = LevMarLSQFitter()
     fit_spec_mod = fitter(spec_mod.flux, disp, flux, maxiter=2000)
 
@@ -240,9 +251,10 @@ def get_line_info(disp, flux, **kwargs):
                               center=default_values['lambda_0'])
         reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0)
 
-        line_properties.update({
-            'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
-            'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
+        if not np.isnan(reg_ew.value):
+            line_properties.update({
+                'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
+                'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
 
     # Loop over individual ions and calculate per-ion properties

@@ -186,7 +186,7 @@ def get_line_info(disp, flux, **kwargs):
     import astropy.units as u
     from spectacle.analysis.line_finder import LineFinder
 
-
+    plot = kwargs.get('plot',False)
     threshold = kwargs.get('threshold', 0.01)
     redshift = kwargs.get("redshift", 0.0)
     tau = kwargs.get("tau", -1.0*np.log(flux))  ## if you aren't passing tau in,
@@ -228,17 +228,18 @@ def get_line_info(disp, flux, **kwargs):
     print('*~*~*~*~*~> running the fitter now *~*~*~*~*~>')
     spec_mod = line_finder(disp, flux)
 
-    # Plot for visual checks
-    import matplotlib.pyplot as plt
-    from uuid import uuid4
+    if plot:
+        # Plot for visual checks
+        import matplotlib.pyplot as plt
+        from uuid import uuid4
 
-    f, ax = plt.subplots()
+        f, ax = plt.subplots()
 
-    ax.plot(disp, flux)
-    ax.plot(disp, line_finder._result_model.flux(disp))
-    ax.plot(disp, spec_mod.flux(disp))
+        ax.plot(disp, flux)
+        ax.plot(disp, line_finder._result_model.flux(disp))
+        ax.plot(disp, spec_mod.flux(disp))
 
-    plt.savefig("{}.png".format(uuid4()))
+        plt.savefig("{}.png".format(uuid4()))
 
     line_properties = {
         'NCOMP': len(spec_mod.line_models)

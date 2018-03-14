@@ -217,22 +217,31 @@ def get_line_info(disp, flux, **kwargs):
     # result to the data.
     print('*~*~*~*~*~> setting up the LineFinder *~*~*~*~*~>')
     print('length of arrays:', len(disp))
-    spec_mod = LineFinder(disp, flux,
-                         ion_name=ion_name,
-                         redshift=redshift,
-                         data_type='flux',
-                         threshold=threshold,  ## flux decrement has to be > threshold; default 0.01
-                         defaults=default_values).fit()
+    line_finder = LineFinder(ion_name=ion_name,
+                             redshift=redshift,
+                             data_type='flux',
+                             defaults=default_values,
+                             threshold=threshold, # flux decrement has to be > threshold; default 0.01
+                             min_distance=0.1, # The distance between minima, in dispersion units!
+                             max_iter=2000 # The number of fitter iterations; reduce to speed up fitting at the cost of possibly poorer fits
+                             )
     print('*~*~*~*~*~> running the fitter now *~*~*~*~*~>')
-    fitter = LevMarLSQFitter()
-    fit_spec_mod = fitter(spec_mod.flux, disp, flux, maxiter=2000)
+    spec_mod = line_finder(disp, flux)
 
-    # This will be more user-friendly in the future: get all the Voigt
-    # profiles that make up this spectrum model.
-    line_mods = [x for x in fit_spec_mod if hasattr(x, 'lambda_0')]
+    # Plot for visual checks
+    import matplotlib.pyplot as plt
+    from uuid import uuid4
+
+    f, ax = plt.subplots()
+
+    ax.plot(disp, flux)
+    ax.plot(disp, line_finder._result_model.flux(disp))
+    ax.plot(disp, spec_mod.flux(disp))
+
+    plt.savefig("{}.png".format(uuid4()))
 
     line_properties = {
-        'NCOMP': len(line_mods)
+        'NCOMP': len(spec_mod.line_models)
     }
 
     # Calculate total equivalent width
@@ -258,7 +267,7 @@ def get_line_info(disp, flux, **kwargs):
         })
 
     # Loop over individual ions and calculate per-ion properties
-    for i, line in enumerate(line_mods):
+    for i, line in enumerate(spec_mod.line_models):
         dv90 = line.delta_v_90()
         fwhm = line.fwhm()
         ew = line.equivalent_width()

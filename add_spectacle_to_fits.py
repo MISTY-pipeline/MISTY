@@ -73,69 +73,74 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
         key = 'LINE_'+str(line_num+1)
         line_name = orig_hdu[0].header[key]
         print('~~~~> trying',line_name,'~~~~~>>>>')
-        new_ext = orig_hdu[line_name]
-        for k in orig_hdu[line_name].header:
-            if k not in keys_to_copy:
-                print("deleting ", k)
-                del new_ext.header[k]
 
-        lambda_0 = orig_hdu[line_name].header['RESTWAVE']
-        disp = orig_hdu[line_name].data['wavelength']
-        flux = orig_hdu[line_name].data['flux']
-        tau = orig_hdu[line_name].data['tau']
-        redshift = orig_hdu[line_name].data['redshift']
-        data = Table([disp, redshift, flux, tau], names=('disp', 'redshift', 'flux', 'tau'))
-        data.sort('disp')
-        zsnap = np.median(redshift)
-        print('flux for original line ',line_name,': ',np.min(flux),np.max(flux))
-        if resample > 0:
-            print('Resampling at',resample,' km/s:')
-            velocity = ((data['disp'] / orig_hdu[line_name].header['RESTWAVE']) - 1 - zsnap) * 299792.458 * u.km / u.s
-            nstep = np.round((np.max(velocity.value) - np.min(velocity.value))/resample) ## resample is in km/s
-            new_vel = np.linspace(np.min(velocity.value), np.max(velocity.value), nstep) * u.km / u.s
-            new_flux = Resample(velocity, new_vel)(data['flux'])
-            new_tau = Resample(velocity, new_vel)(data['tau'])
-            new_redshift = Resample(velocity, new_vel)(data['disp'] / lambda_0 - 1)
-            new_disp = lambda_0 * (((new_vel.value / 299792.458)) + (1 + zsnap))
-            new_disp = lambda_0 * (((new_vel.value / 299792.458)) + (1 + zsnap))
-            z_col = fits.Column(name='redshift_rs', format='E', array=new_redshift)
-            wavelength = fits.Column(name='disp_rs', format='E',
-                                     array=new_disp, unit='Angstrom')
-            tau_col = fits.Column(name='tau_rs', format='E', array=new_tau)
-            flux_col = fits.Column(name='flux_rs', format='E', array=new_flux)
-            col_list = [z_col, wavelength, tau_col, flux_col]
-            disp = new_disp
-            flux = new_flux
-            redshift = new_redshift
-            tau = new_tau
+        if any([x.name.upper() == line_name.upper() for x in orig_hdu]):
+            new_ext = orig_hdu[line_name]
+            for k in orig_hdu[line_name].header:
+                if k not in keys_to_copy:
+                    print("deleting ", k)
+                    del new_ext.header[k]
 
-        print('flux for resampled line ',line_name,': ',np.min(flux),np.max(flux))
-        print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
-        lines_properties = MISTY.get_line_info(disp, flux, \
-                                        tau=tau, \
-                                        redshift=zsnap, \
-                                        lambda_0=lambda_0, \
-                                        f_value=orig_hdu[line_name].header['F_VALUE'], \
-                                        gamma=orig_hdu[line_name].header['GAMMA'], \
-                                        ion_name=line_name, \
-                                        threshold = threshold)
-        print(lines_properties)
+            lambda_0 = orig_hdu[line_name].header['RESTWAVE']
+            disp = orig_hdu[line_name].data['wavelength']
+            flux = orig_hdu[line_name].data['flux']
+            tau = orig_hdu[line_name].data['tau']
+            redshift = orig_hdu[line_name].data['redshift']
+            data = Table([disp, redshift, flux, tau], names=('disp', 'redshift', 'flux', 'tau'))
+            data.sort('disp')
+            zsnap = np.median(redshift)
+            print('flux for original line ',line_name,': ',np.min(flux),np.max(flux))
+            if resample > 0:
+                print('Resampling at',resample,' km/s:')
+                velocity = ((data['disp'] / orig_hdu[line_name].header['RESTWAVE']) - 1 - zsnap) * 299792.458 * u.km / u.s
+                nstep = np.round((np.max(velocity.value) - np.min(velocity.value))/resample) ## resample is in km/s
+                new_vel = np.linspace(np.min(velocity.value), np.max(velocity.value), nstep) * u.km / u.s
+                new_flux = Resample(velocity, new_vel)(data['flux'])
+                new_tau = Resample(velocity, new_vel)(data['tau'])
+                new_redshift = Resample(velocity, new_vel)(data['disp'] / lambda_0 - 1)
+                new_disp = lambda_0 * (((new_vel.value / 299792.458)) + (1 + zsnap))
+                new_disp = lambda_0 * (((new_vel.value / 299792.458)) + (1 + zsnap))
+                z_col = fits.Column(name='redshift_rs', format='E', array=new_redshift)
+                wavelength = fits.Column(name='disp_rs', format='E',
+                                         array=new_disp, unit='Angstrom')
+                tau_col = fits.Column(name='tau_rs', format='E', array=new_tau)
+                flux_col = fits.Column(name='flux_rs', format='E', array=new_flux)
+                col_list = [z_col, wavelength, tau_col, flux_col]
+                disp = new_disp
+                flux = new_flux
+                redshift = new_redshift
+                tau = new_tau
 
-        ## we want Nmin
-        Nmin = np.size(np.where(new_flux[argrelextrema(new_flux, np.less)[0]] < (1-threshold)))
-        new_ext.header['Nmin'] = Nmin
+            ## we want Nmin
+            Nmin = np.size(np.where(new_flux[argrelextrema(new_flux, np.less)[0]] < (1-threshold)))
+            new_ext.header['Nmin'] = Nmin
 
-        for line_key in lines_properties:
-            new_ext.header[line_key] = lines_properties[line_key]
+            print('flux for resampled line ',line_name,': ',np.min(flux),np.max(flux))
+            # print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
+            # lines_properties = MISTY.get_line_info(disp, flux, \
+            #                                 tau=tau, \
+            #                                 redshift=zsnap, \
+            #                                 lambda_0=lambda_0, \
+            #                                 f_value=orig_hdu[line_name].header['F_VALUE'], \
+            #                                 gamma=orig_hdu[line_name].header['GAMMA'], \
+            #                                 ion_name=line_name, \
+            #                                 threshold = threshold)
+            # print(lines_properties)
+            #
+            #
+            # for line_key in lines_properties:
+            #     new_ext.header[line_key] = lines_properties[line_key]
 
-        new_col_list = new_ext.data.columns
-        for col in col_list:
-            new_col_list = np.append(new_col_list, col)
-        cols = fits.ColDefs(new_col_list)
-        final_new_ext = fits.BinTableHDU.from_columns(cols, header=new_ext.header, name=line_name)
+            new_col_list = new_ext.data.columns
+            for col in col_list:
+                new_col_list = np.append(new_col_list, col)
+            cols = fits.ColDefs(new_col_list)
+            final_new_ext = fits.BinTableHDU.from_columns(cols, header=new_ext.header, name=line_name)
 
-        new_hdu.append(final_new_ext)
-        print('~~~~> all done with',line_name,'~~~~~<<<')
+            new_hdu.append(final_new_ext)
+            print('~~~~> all done with',line_name,'~~~~~<<<')
+        else:
+            print('<<<<<~~~~ ',line_name,' not found :-(  ~~~~~<<<<<<')
 
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')

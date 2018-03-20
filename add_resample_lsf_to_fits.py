@@ -27,6 +27,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     fwhm = kwargs.get('fwhm', 0.0)  ## km/s of lsf
     threshold = kwargs.get('threshold', 0.01)
     plot = kwargs.get('plot', False)
+    use_spectacle = kwargs.get('use_spectacle', True)
 
     orig_hdu = fits.open(old_fits_name)
     new_hdu = fits.HDUList([orig_hdu[0]])
@@ -143,20 +144,22 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             new_ext.header['Nmin'] = Nmin
 
             print('flux for new line ',line_name,': ',np.min(flux),np.max(flux), 'with Nmin=',Nmin)
-            print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
-            lines_properties = MISTY.get_line_info(disp, flux, \
-                                            tau=tau, \
-                                            redshift=zsnap, \
-                                            lambda_0=lambda_0, \
-                                            f_value=orig_hdu[line_name].header['F_VALUE'], \
-                                            gamma=orig_hdu[line_name].header['GAMMA'], \
-                                            ion_name=line_name, \
-                                            threshold = threshold)
-            print(lines_properties)
+
+            if use_spectacle:
+                print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
+                lines_properties = MISTY.get_line_info(disp, flux, \
+                                                tau=tau, \
+                                                redshift=zsnap, \
+                                                lambda_0=lambda_0, \
+                                                f_value=orig_hdu[line_name].header['F_VALUE'], \
+                                                gamma=orig_hdu[line_name].header['GAMMA'], \
+                                                ion_name=line_name, \
+                                                threshold = threshold)
+                print(lines_properties)
 
 
-            for line_key in lines_properties:
-                new_ext.header[line_key] = lines_properties[line_key]
+                for line_key in lines_properties:
+                    new_ext.header[line_key] = lines_properties[line_key]
 
             cols = fits.ColDefs(col_list)
             final_new_ext = fits.BinTableHDU.from_columns(cols, header=new_ext.header, name=line_name)
@@ -180,4 +183,4 @@ if __name__ == "__main__":
     for filename in dataset_list:
         new_filename = '.' + filename.strip('los.fits.gz') + 'lsf.fits.gz'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename, resample=2., fwhm=0.)
+        add_spectacle_to_fits(filename, new_filename, resample=2., fwhm=7.)

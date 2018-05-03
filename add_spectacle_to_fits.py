@@ -7,8 +7,14 @@ runs spectacle and creates new fits file with new header information
 
 from __future__ import print_function
 
+import glob
+import os
+
 import MISTY
 from spectacle.analysis import Resample
+
+os.sys.path.insert(0, '/Users/molly/Dropbox/foggie/foggie')
+from plot_misty_spectra import plot_misty_spectra
 
 import numpy as np
 
@@ -18,9 +24,6 @@ from astropy.convolution import Gaussian1DKernel, convolve
 from astropy.table import Table
 
 from scipy.signal import argrelextrema
-
-import glob
-import os
 
 def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     threshold = kwargs.get('threshold', 0.01)
@@ -84,14 +87,21 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                     del new_ext.header[k]
 
             lambda_0 = orig_hdu[line_name].header['RESTWAVE']
-            disp = orig_hdu[line_name].data['wavelength']
-            flux = orig_hdu[line_name].data['flux']
-            tau = orig_hdu[line_name].data['tau']
-            redshift = orig_hdu[line_name].data['redshift']
+            try:
+                disp = orig_hdu[line_name].data['wavelength']
+                flux = orig_hdu[line_name].data['flux']
+                tau = orig_hdu[line_name].data['tau']
+                redshift = orig_hdu[line_name].data['redshift']
+            except:
+                disp = orig_hdu[line_name].data['disp_obs']
+                flux = orig_hdu[line_name].data['flux_obs']
+                tau = orig_hdu[line_name].data['tau_obs']
+                redshift = orig_hdu[line_name].data['redshift_obs']
+
             zsnap = np.median(redshift)
 
             ## we want Nmin
-            Nmin = np.size(np.where(new_flux[argrelextrema(new_flux, np.less)[0]] < (1-threshold)))
+            Nmin = np.size(np.where(flux[argrelextrema(flux, np.less)[0]] < (1-threshold)))
             new_ext.header['Nmin'] = Nmin
 
             print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
@@ -107,6 +117,9 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
 
 
             for line_key in lines_properties:
+                if isinstance(lines_properties[line_key], tuple):
+                    if np.isnan(lines_properties[line_key][0]):
+                        lines_properties[line_key] = -99.
                 new_ext.header[line_key] = lines_properties[line_key]
 
 
@@ -118,15 +131,18 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')
 
+    plotname = '.' + new_fits_name.strip('.fits.gz') + '.png'
+    print('plotting to... ' + plotname)
+    plot_misty_spectra(new_hdu, overplot=True, outname=plotname)
 
 
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v4_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v4_lsf.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
-        new_filename = '.' + filename.strip('los.fits.gz') + 'los.fits.gz'
+        new_filename = '.' + filename.strip('lsf.fits.gz') + 'lsf.fits.gz'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename)
+        add_spectacle_to_fits(filename, new_filename, threshold=0.005)

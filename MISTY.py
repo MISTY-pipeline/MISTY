@@ -7,7 +7,6 @@ import time
 
 import numpy as np
 from astropy.io import fits
-from astropy.modeling.fitting import LevMarLSQFitter
 import astropy.units as u
 
 import trident
@@ -16,10 +15,10 @@ os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
 from spectacle.analysis.line_finder import LineFinder
 from spectacle.analysis.statistics import delta_v_90, equivalent_width
 from spectacle.core.spectrum import Spectrum1D
-from spectacle.modeling import Resample
+from spectacle.analysis import Resample
 
 ldb = trident.LineDatabase('lines.txt')
-# ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
+## ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
 
 def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     # begin making fits header

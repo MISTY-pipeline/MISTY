@@ -177,10 +177,10 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v4_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*rd0020*v4_los.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
         new_filename = '.' + filename.strip('los.fits.gz') + 'lsf.fits.gz'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename, resample=2., fwhm=7.)
+        add_spectacle_to_fits(filename, new_filename, resample=2., fwhm=7., use_spectacle=True)

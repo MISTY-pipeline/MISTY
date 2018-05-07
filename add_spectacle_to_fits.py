@@ -27,6 +27,7 @@ from scipy.signal import argrelextrema
 
 def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     threshold = kwargs.get('threshold', 0.01)
+    plotname = kwargs.get('plotname', 'temp.png')
     plot = kwargs.get('plot', False)
 
     orig_hdu = fits.open(old_fits_name)
@@ -131,7 +132,6 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')
 
-    plotname = '.' + new_fits_name.strip('.fits.gz') + '.png'
     print('plotting to... ' + plotname)
     plot_misty_spectra(new_hdu, overplot=True, outname=plotname)
 
@@ -144,5 +144,6 @@ if __name__ == "__main__":
 
     for filename in dataset_list:
         new_filename = '.' + filename.strip('lsf.fits.gz') + 'lsf.fits.gz'
+        plotname = '.' + new_fits_name.strip('.lsf.fits.gz') + 'lsf.png'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename, threshold=0.005)
+        add_spectacle_to_fits(filename, new_filename, plot=True, plotname=plotname, threshold=0.005)

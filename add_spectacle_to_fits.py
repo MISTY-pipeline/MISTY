@@ -144,6 +144,6 @@ if __name__ == "__main__":
 
     for filename in dataset_list:
         new_filename = '.' + filename.strip('lsf.fits.gz') + 'lsf.fits.gz'
-        plotname = '.' + new_fits_name.strip('.lsf.fits.gz') + 'lsf.png'
+        plotname = '.' + new_filename.strip('.lsf.fits.gz') + 'lsf.png'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
         add_spectacle_to_fits(filename, new_filename, plot=True, plotname=plotname, threshold=0.005)

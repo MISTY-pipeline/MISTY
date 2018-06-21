@@ -10,6 +10,13 @@ from __future__ import print_function
 import MISTY
 from spectacle.analysis import Resample
 
+import glob
+import os
+import argparse
+
+os.sys.path.insert(0, '/Users/molly/Dropbox/foggie/foggie')
+from plot_misty_spectra import plot_misty_spectra
+
 import numpy as np
 
 from astropy.io import fits
@@ -19,8 +26,32 @@ from astropy.table import Table
 
 from scipy.signal import argrelextrema
 
-import glob
-import os
+def parse_args():
+    '''
+    Parse command line arguments.  Returns args object.
+    '''
+    parser = argparse.ArgumentParser(description="resamples and convovles LSF to MISTY spectra; optionally runs spectacle")
+
+    parser.add_argument('--lsf', metavar='lsf', type=float, action='store',
+                        help='FWHM of LSF? if zero; skips. default: 7km/s')
+    parser.set_defaults(lsf=7.)
+
+    parser.add_argument('--resample', metavar='resample', type=float, action='store',
+                        help='resampling of spectrum? in km/s. if zero; skips. default: 2km/s')
+    parser.set_defaults(resample=2.)
+
+    parser.add_argument('--spectacle', dest='spectacle', action='store_true',
+                            help='run spectacle? default is yes')
+    parser.set_defaults(spectacle=True)
+
+    parser.add_argument('--appendix', dest='appendix',  type=str, action='store',
+                            help='what appendix to add? default is lsf')
+    parser.set_defaults(appendix='lsf')
+
+
+    args = parser.parse_args()
+    return args
+
 
 def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     resample = kwargs.get('resample', 0.0)  ## km/s of pixels
@@ -28,6 +59,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     threshold = kwargs.get('threshold', 0.01)
     plot = kwargs.get('plot', False)
     use_spectacle = kwargs.get('use_spectacle', True)
+    plotname = kwargs.get('plotname', 'temp.png')
 
     orig_hdu = fits.open(old_fits_name)
     new_hdu = fits.HDUList([orig_hdu[0]])
@@ -102,7 +134,8 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             if resample > 0:
                 print('Resampling at',resample,' km/s:')
                 pixsize = resample
-                nstep = np.round((vmax - vmin)/pixsize)  ## 2 km/s
+                print(vmax, vmin, pixsize)
+                nstep = np.round((vmax - vmin)/pixsize)
                 new_vel = np.linspace(vmin, vmax, nstep) * u.km / u.s
                 new_flux = Resample(new_vel)(velocity, flux)
                 new_tau = Resample(new_vel)(velocity, data['tau'])
@@ -169,6 +202,9 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
         else:
             print('<<<<<~~~~ ',line_name,' not found :-(  ~~~~~<<<<<<')
 
+    print('plotting...')
+    plot_misty_spectra(new_hdu, overplot=True, outname=plotname)
+
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')
 
@@ -177,10 +213,15 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*rd0020*v4_los.fits.gz'))
+    args = parse_args()
+
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*rd0020*v5_los.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
-        new_filename = '.' + filename.strip('los.fits.gz') + 'lsf.fits.gz'
-        print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename, resample=2., fwhm=7., use_spectacle=True)
+        fileroot = '.' + filename.strip('los.fits.gz')
+        new_filename = fileroot + args.appendix + '.fits.gz'
+        plotname = fileroot + args.appendix + '.png'
+        print('adding spectacle to ', filename, ' and saving as ', new_filename, ' and plotting to ', plotname)
+        add_spectacle_to_fits(filename, new_filename, resample=args.resample, \
+                        fwhm=args.lsf, use_spectacle=args.spectacle, plotname=plotname)

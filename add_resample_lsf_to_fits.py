@@ -48,6 +48,9 @@ def parse_args():
                             help='what appendix to add? default is lsf')
     parser.set_defaults(appendix='lsf')
 
+    parser.add_argument('--overwrite', dest='overwrite', action='store_true')
+    parser.add_argument('--no-overwrite', dest='overwrite', action='store_false', help="default is no overwrite")
+    parser.set_defaults(overwrite=False)
 
     args = parser.parse_args()
     return args
@@ -215,13 +218,16 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*rd0020*v5_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp_misty_foggie_halo008508_nref11n_nref10f_rd0018_*v5_los.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
         fileroot = '.' + filename.strip('los.fits.gz')
         new_filename = fileroot + args.appendix + '.fits.gz'
         plotname = fileroot + args.appendix + '.png'
-        print('adding spectacle to ', filename, ' and saving as ', new_filename, ' and plotting to ', plotname)
-        add_spectacle_to_fits(filename, new_filename, resample=args.resample, \
+        print(new_filename, os.path.exists(new_filename))
+        if args.overwrite:
+        if not os.path.exists(new_filename):
+            print('adding spectacle to ', filename, ' and saving as ', new_filename, ' and plotting to ', plotname)
+            add_spectacle_to_fits(filename, new_filename, resample=args.resample, \
                         fwhm=args.lsf, use_spectacle=args.spectacle, plotname=plotname)

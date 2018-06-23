@@ -226,8 +226,7 @@ if __name__ == "__main__":
         new_filename = fileroot + args.appendix + '.fits.gz'
         plotname = fileroot + args.appendix + '.png'
         print(new_filename, os.path.exists(new_filename))
-        if args.overwrite:
-        if not os.path.exists(new_filename):
+        if args.overwrite or not os.path.exists(new_filename):
             print('adding spectacle to ', filename, ' and saving as ', new_filename, ' and plotting to ', plotname)
             add_spectacle_to_fits(filename, new_filename, resample=args.resample, \
-                        fwhm=args.lsf, use_spectacle=args.spectacle, plotname=plotname)
+                    fwhm=args.lsf, use_spectacle=args.spectacle, plotname=plotname)

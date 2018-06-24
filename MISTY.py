@@ -88,7 +88,7 @@ def write_parameter_file(ds, filename=None, hdulist=None):
 
 def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist=None, **kwargs):
     '''
-    input: a lightray and a line; writes info to extension of hdulist
+    input: a trident lightray and a line; writes info to extension of hdulist
     '''
     resample = kwargs.get('resample', False)
     if write and type(hdulist) != fits.hdu.hdulist.HDUList:
@@ -105,9 +105,9 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     ar = ray.all_data()
     lambda_rest = line_out.wavelength
     if line_out.name == "H I 1216":
-        padding = 5.
+        padding = 7.
     else:
-        padding = 5.
+        padding = 7.
     lambda_min = lambda_rest * (1 + min(ar['redshift_eff'])) - padding
     lambda_max = lambda_rest * (1 + max(ar['redshift_eff'])) + padding
 
@@ -266,6 +266,10 @@ def get_line_info(disp, flux, **kwargs):
                 'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
 
+    line_properties = {
+        'NREG': len(spec_mod.regions)
+    }
+
     # Loop over individual ions and calculate per-ion properties
     for i, line in enumerate(spec_mod.line_models):
         dv90 = line.delta_v_90()
@@ -286,6 +290,31 @@ def get_line_info(disp, flux, **kwargs):
     #     lines_properties = {'NCOMP': 0}
 
     return line_properties
+
+
+def get_trident_ray(ds, ray_start, ray_end, line_list, **kwargs):
+    '''
+    input: simulation dataset, the ray start and end points, and the line list;
+    returns: the trident ray with the physical information we want to keep track of
+    '''
+    out_tri_name = kwargs.get('out_tri_name', "temp.h5")
+    ## first, figure out the fields
+    field_list = ['metallicity', 'H_p0_number_density']
+
+    ## now, to make sure we have the relevant info for the relevant lines
+
+    ## now, make the ray
+    triray = trident.make_simple_ray(ds, start_position=ray_start.copy(),
+                              end_position=ray_end.copy(),
+                              data_filename=out_tri_name,
+                              lines=line_list,
+                              ftype='gas',
+                              fields=['metallicity', 'H_p0_number_density'])
+
+def get_physical_info(ds, ray):
+    '''
+    input: simulation dataset and
+    '''
 
 
 def write_out(hdulist, filename='spectrum.fits'):

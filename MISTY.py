@@ -12,9 +12,7 @@ import astropy.units as u
 import trident
 
 os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
-from spectacle.analysis.line_finder import LineFinder
 from spectacle.analysis.statistics import delta_v_90, equivalent_width
-from spectacle.core.spectrum import Spectrum1D
 from spectacle.analysis import Resample
 
 ldb = trident.LineDatabase('lines.txt')
@@ -183,7 +181,7 @@ def get_line_info(disp, flux, **kwargs):
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
     import astropy.units as u
-    from spectacle.analysis.line_finder import LineFinder
+    from spectacle.analysis.line_finding import LineFinder
 
     plot = kwargs.get('plot',False)
     threshold = kwargs.get('threshold', 0.01)
@@ -208,21 +206,23 @@ def get_line_info(disp, flux, **kwargs):
         lambda_0=lambda_0 * u.Unit('Angstrom'),
         f_value=f_value,
         gamma=gamma,
-        fixed={'lambda_0': True,
-                'delta_v': True,
-                'delta_lambda': False})
+        bounds={
+            'column_density': (8, 23), # Global bounds in log,
+            'v_doppler': (3, 1e3) # Global bounds in km/s
+            }
+        )
 
     # Have the line finder attempt to find absorption features. Fit the
     # result to the data.
     print('*~*~*~*~*~> setting up the LineFinder *~*~*~*~*~>')
-    print('length of arrays:', len(disp))
-    line_finder = LineFinder(ion_name=ion_name,
+    print('length of arrays:', len(disp), len(flux))
+    line_finder = LineFinder(rest_wavelength=lambda_0 * u.Unit('Angstrom'),
                              redshift=redshift,
                              data_type='flux',
                              defaults=default_values,
                              threshold=threshold, # flux decrement has to be > threshold; default 0.01
-                             min_distance=0.1, # The distance between minima, in dispersion units!
-                             max_iter=2000 # The number of fitter iterations; reduce to speed up fitting at the cost of possibly poorer fits
+                             min_distance=2. * u.Unit('km/s'), # The distance between minima, in dispersion units!
+                             max_iter=3000 # The number of fitter iterations; reduce to speed up fitting at the cost of possibly poorer fits
                              )
     print('*~*~*~*~*~> running the fitter now *~*~*~*~*~>')
     spec_mod = line_finder(disp, flux)
@@ -257,7 +257,7 @@ def get_line_info(disp, flux, **kwargs):
         mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
 
         reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0,
-                              center=default_values['lambda_0'])
+                              rest_wavelength=default_values['lambda_0'])
         reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0)
 
         if not np.isnan(reg_ew.value):
@@ -270,19 +270,19 @@ def get_line_info(disp, flux, **kwargs):
         'NREG': len(spec_mod.regions)
     }
 
-    # Loop over individual ions and calculate per-ion properties
-    for i, line in enumerate(spec_mod.line_models):
-        dv90 = line.delta_v_90()
-        fwhm = line.fwhm()
-        ew = line.equivalent_width()
+    import astropy
+    print("astropy version = ",astropy.__version__)
+    print(spec_mod.stats(disp))
 
+    # Loop over individual ions and calculate per-ion properties
+    for i, line in enumerate(spec_mod.stats(disp)):
         line_properties.update({
-            'fitcol' + str(i): (line.column_density.value, line.column_density.unit.to_string()),
-            'fitb' + str(i): (line.v_doppler.value, line.v_doppler.unit.to_string()),
-            'fitlcen' + str(i): (line.lambda_0.value + line.delta_lambda.value, line.lambda_0.unit.to_string()),
-            'fitEW' + str(i): (ew.value, ew.unit.to_string()),
-            'fitdv90' + str(i): (dv90.value, dv90.unit.to_string()),
-            'fitfwhm' + str(i): (fwhm.value, fwhm.unit.to_string())
+            'fitcol' + str(i): (line['col_dens'], 'cm/s'),
+            'fitb' + str(i): (line['v_dop'].value, line['v_dop'].unit.to_string()),
+            'fitlcen' + str(i): (line['centroid'].value, line['centroid'].unit.to_string()),
+            'fitEW' + str(i): (line['ew'].value, line['ew'].unit.to_string()),
+            'fitdv90' + str(i): (line['dv90'].value, line['dv90'].unit.to_string()),
+            'fitfwhm' + str(i): (line['fwhm'].value, line['fwhm'].unit.to_string())
         })
 
     # except Exception:

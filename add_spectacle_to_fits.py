@@ -104,6 +104,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             ## we want Nmin
             Nmin = np.size(np.where(flux[argrelextrema(flux, np.less)[0]] < (1-threshold)))
             new_ext.header['Nmin'] = Nmin
+            print('found ', Nmin, ' minima')
 
             print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
             lines_properties = MISTY.get_line_info(disp, flux, \
@@ -139,11 +140,11 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v4_lsf.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v5_rsp.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
-        new_filename = '.' + filename.strip('lsf.fits.gz') + 'lsf.fits.gz'
-        plotname = '.' + new_filename.strip('.lsf.fits.gz') + 'lsf.png'
+        new_filename = '.' + filename.strip('rsp.fits.gz') + 'rsp.fits.gz'
+        plotname = '.' + new_filename.strip('.rsp.fits.gz') + 'rsp.png'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
-        add_spectacle_to_fits(filename, new_filename, plot=True, plotname=plotname, threshold=0.005)
+        add_spectacle_to_fits(filename, new_filename, plot=True, plotname=plotname, threshold=0.001)

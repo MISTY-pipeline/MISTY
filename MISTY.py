@@ -270,14 +270,12 @@ def get_line_info(disp, flux, **kwargs):
         'NREG': len(spec_mod.regions)
     }
 
-    import astropy
-    print("astropy version = ",astropy.__version__)
     print(spec_mod.stats(disp))
 
     # Loop over individual ions and calculate per-ion properties
     for i, line in enumerate(spec_mod.stats(disp)):
         line_properties.update({
-            'fitcol' + str(i): (line['col_dens'], 'cm/s'),
+            'fitcol' + str(i): (line['col_dens'], 'log cm/s'),
             'fitb' + str(i): (line['v_dop'].value, line['v_dop'].unit.to_string()),
             'fitlcen' + str(i): (line['centroid'].value, line['centroid'].unit.to_string()),
             'fitEW' + str(i): (line['ew'].value, line['ew'].unit.to_string()),

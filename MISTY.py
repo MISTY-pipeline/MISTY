@@ -246,11 +246,13 @@ def get_line_info(disp, flux, **kwargs):
 
     # Calculate total equivalent width
     tot_ew = equivalent_width(disp, flux, continuum=1.0)
+    tot_dv90 = delta_v_90(disp, flux, continuum=1.0, rest_wavelength=lambda_0 * u.Unit('Angstrom'))
 
     line_properties.update({
-        'totEW': (tot_ew.value, tot_ew.unit.to_string())
+        'totEW': (tot_ew.value, tot_ew.unit.to_string()),
+        'totdv90': (tot_dv90.value, tot_dv90.unit.to_string())
     })
-
+    
     # Loop over identified absorption regions and calculate the ew and dv90
     # for the region
     for i, reg in enumerate(spec_mod.regions):

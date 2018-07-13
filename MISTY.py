@@ -273,14 +273,16 @@ def get_line_info(disp, flux, **kwargs):
         'NREG': len(spec_mod.regions)
     }
 
-    print(spec_mod.stats(disp))
+    comp_table = spec_mod.stats(disp)
+    comp_table.sort('delta_v')
+    print(comp_table)
 
     # Loop over individual ions and calculate per-ion properties
-    for i, line in enumerate(spec_mod.stats(disp)):
+    for i, line in enumerate(comp_table):
         line_properties.update({
             'fitcol' + str(i): (line['col_dens'], 'log cm/s'),
             'fitb' + str(i): (line['v_dop'].value, line['v_dop'].unit.to_string()),
-            'fitlcen' + str(i): (line['centroid'].value, line['centroid'].unit.to_string()),
+            'fitvcen' + str(i): (line['delta_v'].value, line['delta_v'].unit.to_string()),
             'fitEW' + str(i): (line['ew'].value, line['ew'].unit.to_string()),
             'fitdv90' + str(i): (line['dv90'].value, line['dv90'].unit.to_string()),
             'fitfwhm' + str(i): (line['fwhm'].value, line['fwhm'].unit.to_string())

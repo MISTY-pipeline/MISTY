@@ -23,6 +23,7 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr = fits.Header()
     prihdr['AUTHOR'] = kwargs.get("author", getpass.getuser())
     prihdr['DATE'] = datetime.datetime.now().isoformat()
+    prihdr['REDSHIFT'] = kwargs.get('redshift', 0.0)
     prihdr['RAYSTART'] = str(start_pos[0]) + "," + \
         str(start_pos[1]) + "," + str(start_pos[2])
     prihdr['RAYEND'] = str(end_pos[0]) + "," + \
@@ -252,7 +253,7 @@ def get_line_info(disp, flux, **kwargs):
         'totEW': (tot_ew.value, tot_ew.unit.to_string()),
         'totdv90': (tot_dv90.value, tot_dv90.unit.to_string())
     })
-    
+
     # Loop over identified absorption regions and calculate the ew and dv90
     # for the region
     for i, reg in enumerate(spec_mod.regions):

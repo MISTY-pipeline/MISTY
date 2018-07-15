@@ -269,9 +269,9 @@ def get_line_info(disp, flux, **kwargs):
                 'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
         })
 
-    line_properties = {
+    line_properties.update({
         'NREG': len(spec_mod.regions)
-    }
+    })
 
     comp_table = spec_mod.stats(disp)
     comp_table.sort('delta_v')

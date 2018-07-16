@@ -208,8 +208,8 @@ def get_line_info(disp, flux, **kwargs):
         f_value=f_value,
         gamma=gamma,
         bounds={
-            'column_density': (8, 23), # Global bounds in log,
-            'v_doppler': (3, 1e3) # Global bounds in km/s
+            'column_density': (10, 23), # Global bounds in log,
+            'v_doppler': (2, 500.) # Global bounds in km/s
             }
         )
 
@@ -245,9 +245,9 @@ def get_line_info(disp, flux, **kwargs):
         'NCOMP': len(spec_mod.line_models)
     }
 
-    # Calculate total equivalent width
-    tot_ew = equivalent_width(disp, flux, continuum=1.0)
-    tot_dv90 = delta_v_90(disp, flux, continuum=1.0, rest_wavelength=lambda_0 * u.Unit('Angstrom'))
+    # Calculate total equivalent width -- RESTFRAME!
+    tot_ew = equivalent_width(disp/(1+redshift), flux, continuum=1.0)
+    tot_dv90 = delta_v_90(disp/(1+redshift), flux, continuum=1.0, rest_wavelength=lambda_0 * u.Unit('Angstrom'))
 
     line_properties.update({
         'totEW': (tot_ew.value, tot_ew.unit.to_string()),
@@ -259,9 +259,9 @@ def get_line_info(disp, flux, **kwargs):
     for i, reg in enumerate(spec_mod.regions):
         mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
 
-        reg_dv90 = delta_v_90(disp[mask], flux[mask], continuum=1.0,
+        reg_dv90 = delta_v_90(disp[mask]/(1+redshift), flux[mask], continuum=1.0,
                               rest_wavelength=default_values['lambda_0'])
-        reg_ew = equivalent_width(disp[mask], flux[mask], continuum=1.0)
+        reg_ew = equivalent_width(disp[mask]/(1+redshift), flux[mask], continuum=1.0)
 
         if not np.isnan(reg_ew.value):
             line_properties.update({

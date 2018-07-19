@@ -42,6 +42,7 @@ def parse_args():
 
     parser.add_argument('--spectacle', dest='spectacle', action='store_true',
                             help='run spectacle? default is yes')
+    parser.add_argument('--no-spectacle', dest='spectacle', action='store_false')
     parser.set_defaults(spectacle=True)
 
     parser.add_argument('--appendix', dest='appendix',  type=str, action='store',
@@ -218,7 +219,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp_misty_foggie_halo008508_nref11n_nref10f_rd0018_*v5_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp_misty_foggie_halo008508_nref11n_*v5_los.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:

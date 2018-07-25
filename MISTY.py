@@ -75,7 +75,7 @@ def write_parameter_file(ds, filename=None, hdulist=None):
     print("---> SIM_CODE set to ", ds.dataset_type,
           "if you don't like this, change it!")
     sghdr['COMPUTER'] = 'pleiades'
-    print("---> ASSUMING PLEIADES FOR NOW BUT SHOULD BE PASSSSSSED IN")
+    print("---> ASSUMING PLEIADES FOR NOW BUT SHOULD BE PASSED IN")
 
     # primary_hdu = fits.PrimaryHDU(header=sghdr)
 

@@ -66,6 +66,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     plotname = kwargs.get('plotname', 'temp.png')
 
     orig_hdu = fits.open(old_fits_name)
+    zsnap = orig_hdu[0].header['REDSHIFT']
     new_hdu = fits.HDUList([orig_hdu[0]])
     new_hdu.append(orig_hdu[1])
 
@@ -122,7 +123,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                     print("deleting ", k)
                     del new_ext.header[k]
 
-            lambda_0 = orig_hdu[line_name].header['RESTWAVE']
+            lambda_0 = orig_hdu[line_name].header['RESTWAVE'] * u.AA
             disp = orig_hdu[line_name].data['wavelength']
             flux = orig_hdu[line_name].data['flux']
             old_flux = flux
@@ -130,26 +131,25 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             redshift = orig_hdu[line_name].data['redshift']
             data = Table([disp, redshift, flux, tau], names=('disp', 'redshift', 'flux', 'tau'))
             data.sort('disp')
-            zsnap = np.median(redshift)
-            velocity = ((data['disp'] / orig_hdu[line_name].header['RESTWAVE']) - 1 - zsnap) * 299792.458 * u.km / u.s
-            vcen = np.median(velocity.value)
-            vmin, vmax = vcen - 1200, vcen + 1200
+            with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_0*(1+zsnap))):
+                velocity = (data['disp'] * u.AA).to('km/s')
+            vmin, vmax = -500, 500
             print('flux for original line ',line_name,': ',np.min(flux),np.max(flux),'with Nmin=',np.size(np.where(old_flux[argrelextrema(old_flux, np.less)[0]] < (1-threshold))))
             if resample > 0:
-                print('Resampling at',resample,' km/s:')
+                print('Resampling at',resample,' km/s...')
                 pixsize = resample
-                print(vmax, vmin, pixsize)
+                print("velocity range:",vmax, vmin, pixsize)
                 nstep = np.round((vmax - vmin)/pixsize)
                 new_vel = np.linspace(vmin, vmax, nstep) * u.km / u.s
+                new_disp = Resample(new_vel)(velocity, data['disp'])
                 new_flux = Resample(new_vel)(velocity, flux)
                 new_tau = Resample(new_vel)(velocity, data['tau'])
-                new_redshift = Resample(new_vel)(velocity, data['disp'] / lambda_0 - 1)
-                new_disp = lambda_0 * (((new_vel.value / 299792.458)) + (1 + zsnap))
+                new_redshift = Resample(new_vel)(velocity, redshift)
                 disp = new_disp
                 flux = new_flux
                 redshift = new_redshift
                 tau = new_tau
-                print('resampled, Nmin now = ',np.size(np.where(flux[argrelextrema(flux, np.less)[0]] < (1-threshold))))
+                print('...resampled, Nmin now = ',np.size(np.where(flux[argrelextrema(flux, np.less)[0]] < (1-threshold))))
                 print(len(old_flux), len(new_flux))
             if fwhm > 0:
                 print('Adding LSF with FWHM = ',fwhm,'km/s:')
@@ -174,7 +174,8 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                                          array=disp, unit='Angstrom')
                 tau_col = fits.Column(name='tau_obs', format='E', array=tau)
                 flux_col = fits.Column(name='flux_obs', format='E', array=flux)
-                col_list = [z_col, wavelength, tau_col, flux_col]
+                vel_col = fits.Column(name='velocity', format='E', array=new_vel)
+                col_list = [z_col, wavelength, vel_col, tau_col, flux_col]
 
             ## we want Nmin
             Nmin = np.size(np.where(new_flux[argrelextrema(new_flux, np.less)[0]] < (1-threshold)))
@@ -191,7 +192,8 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                                                 f_value=orig_hdu[line_name].header['F_VALUE'], \
                                                 gamma=orig_hdu[line_name].header['GAMMA'], \
                                                 ion_name=line_name, \
-                                                threshold = threshold)
+                                                threshold = threshold, \
+                                                lsf = lsfFIXTHIS)
                 print(lines_properties)
 
 
@@ -219,7 +221,7 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp_misty_foggie_halo008508_nref11n_*v5_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp_misty_foggie_halo008508_nref11*v6_los.fits.gz'))
     dataset_list = long_dataset_list
 
     for filename in dataset_list:

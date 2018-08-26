@@ -133,7 +133,11 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             data.sort('disp')
             with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_0*(1+zsnap))):
                 velocity = (data['disp'] * u.AA).to('km/s')
-            vmin, vmax = -500, 500
+            vrange = max(velocity.value) - min(velocity.value)
+            vhalfrange = np.floor(np.min((np.abs(max(velocity.value)), np.abs(min(velocity.value))))) - 5
+            vmin, vmax = -1.0*vhalfrange, vhalfrange
+            print("max, min velocity = ", max(velocity.value) , min(velocity.value))
+            print("velocity range = ", vrange, " with min and max = ", vmin, vmax)
             print('flux for original line ',line_name,': ',np.min(flux),np.max(flux),'with Nmin=',np.size(np.where(old_flux[argrelextrema(old_flux, np.less)[0]] < (1-threshold))))
             if resample > 0:
                 print('Resampling at',resample,' km/s...')

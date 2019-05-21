@@ -134,7 +134,7 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
             with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_0*(1+zsnap))):
                 velocity = (data['disp'] * u.AA).to('km/s')
             vrange = max(velocity.value) - min(velocity.value)
-            vhalfrange = np.floor(np.min((np.abs(max(velocity.value)), np.abs(min(velocity.value))))) - 5
+            vhalfrange = np.floor(np.min((np.abs(max(velocity.value)), np.abs(min(velocity.value))))) - 25
             vmin, vmax = -1.0*vhalfrange, vhalfrange
             print("max, min velocity = ", max(velocity.value) , min(velocity.value))
             print("velocity range = ", vrange, " with min and max = ", vmin, vmax)

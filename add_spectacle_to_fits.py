@@ -12,6 +12,7 @@ import os
 
 import MISTY
 from spectacle.analysis import Resample
+from spectacle.modeling.lsfs import GaussianLSFModel
 
 os.sys.path.insert(0, '/Users/molly/Dropbox/foggie/foggie')
 from plot_misty_spectra import plot_misty_spectra
@@ -119,6 +120,15 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                 Nmin = np.size(np.where(flux[argrelextrema(flux, np.less)[0]] < (1-0.1)))
                 new_ext.header['Nmin010'] = Nmin
 
+                #### lots of assumptions here
+                fwhm = 7. # km/s
+                dv = 2.
+                sigma= (fwhm/dv) / (2*np.sqrt(2.*np.log(2.)))
+                lsf = GaussianLSFModel(stddev = sigma)
+                print("""
+                I AM ASSUMING YOU HAVE AN LSF AND SO IF YOU DON'T YOU SHOULD FIX THIS!!!!!!!!!!!
+                """)
+
                 print("~~~~> now trying to run spectacle on line ",line_name, "~~~~~~>")
                 lines_properties = MISTY.get_line_info(disp, flux, \
                                                 tau=tau, \
@@ -127,7 +137,9 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
                                                 f_value=orig_hdu[line_name].header['F_VALUE'], \
                                                 gamma=orig_hdu[line_name].header['GAMMA'], \
                                                 ion_name=line_name, \
-                                                threshold = threshold)
+                                                threshold = threshold,
+                                                lsf=lsf)
+                                                ##### pass in the LSF here !!!
                 print(lines_properties)
 
 
@@ -146,18 +158,19 @@ def add_spectacle_to_fits(old_fits_name, new_fits_name, **kwargs):
     print("writing out to .... " + new_fits_name)
     new_hdu.writeto(new_fits_name, overwrite=True, output_verify='fix')
 
-    print('plotting to... ' + plotname)
-    plot_misty_spectra(new_hdu, overplot=True, outname=plotname)
+    #print('plotting to... ' + plotname)
+    #plot_misty_spectra(new_hdu, overplot=True, outname=plotname)
 
 
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v5_rsp.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*rd0018*axx*v6_lsf.fits.gz'))
+    ##long_dataset_list = ['./hlsp_misty_foggie_halo008508_nref11n_nref10f_rd0020_axy_dx042.9_dz082.4_v6_lsf.fits.gz']
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
-        new_filename = '.' + filename.strip('rsp.fits.gz') + 'rsp.fits.gz'
-        plotname = '.' + new_filename.strip('.rsp.fits.gz') + 'rsp.png'
+        new_filename = '.' + filename.strip('lsf.fits.gz') + 'lsf.fits.gz'
+        plotname = '.' + new_filename.strip('.lsf.fits.gz') + 'lsf.png'
         print('adding spectacle to ', filename, ' and saving as ', new_filename)
         add_spectacle_to_fits(filename, new_filename, plot=True, plotname=plotname, threshold=0.05)

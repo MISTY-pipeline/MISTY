@@ -12,8 +12,8 @@ import astropy.units as u
 import trident
 
 os.sys.path.insert(0, '/Users/molly/Dropbox/misty/MISTY-pipeline/spectacle')
-from spectacle.analysis.statistics import delta_v_90, equivalent_width
-from spectacle.analysis import Resample
+#from spectacle.analysis.statistics import delta_v_90, equivalent_width
+#from spectacle.analysis import Resample
 
 ldb = trident.LineDatabase('lines.txt')
 ## ldb = trident.LineDatabase('atom_wave_gamma_f.dat')
@@ -29,9 +29,10 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['RAYEND'] = str(end_pos[0]) + "," + \
         str(end_pos[1]) + "," + str(end_pos[2])
     prihdr['SIM_NAME'] = ray.basename
+    prihdr['SIMSUITE'] = 'FOGGIE'
     prihdr['NLINES'] = str(len(np.array(lines)))
-    prihdr['DOI'] = "doi.corlies2017.paper.thisistotesnotmadeup"
-    prihdr['PAPER'] = "Corlies et al. (2017) ApJ, ###, ###"
+    prihdr['DOI'] = "doi.corlies2019.paper.thisistotesnotmadeup"
+    prihdr['PAPER'] = "Tumlinson et al. (2019) ApJ, ###, ###"
     prihdr['EUVB'] = "HM12"  # probably shouldn't be hardcoded
     prihdr['IMPACT'] = (kwargs.get("impact", "undef"), "impact parameter, kpc")
     prihdr['ANGLE'] = (kwargs.get("angle", "undef"), "radians")
@@ -112,7 +113,7 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
 
     sg = trident.SpectrumGenerator(lambda_min=lambda_min.value,
                                    lambda_max=lambda_max.value,
-                                   dlambda=0.0001,
+                                   dlambda=0.01,
                                    line_database='lines.txt'
                                 #   line_database='atom_wave_gamma_f.dat'
                                    )
@@ -182,6 +183,7 @@ def get_line_info(disp, flux, **kwargs):
     runs spectacle on a trident spectrum object and returns absorber properties
     '''
     import astropy.units as u
+    from scipy.signal import argrelextrema
     from spectacle.analysis.line_finding import LineFinder
 
     plot = kwargs.get('plot',False)
@@ -191,11 +193,22 @@ def get_line_info(disp, flux, **kwargs):
                                                 ## you probably don't want to solve using tau
     disp = disp * u.Unit('Angstrom')
 
+#    if np.min(flux) > (1-threshold):
+#        return {}
+    if sum(f < (1-threshold) for f in flux) < 3:
+        print("not enough absoprtion!!!")
+        return {}
+
+    lsf = kwargs.get('lsf', None)  # this should be the full model
+
     ## if line info is not passed in, assume Lya
     ion_name = kwargs.get("ion_name", "H I 1216")
     lambda_0 = kwargs.get("lambda_0", 1215.6701)
     f_value = kwargs.get("f_value", 0.416400)
     gamma = kwargs.get("gamma", 6.265e8)
+
+    with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_0*u.Unit('Angstrom')*(1+redshift))):
+        velocity = disp.to('km/s')
 
     # This process will find lines in the trident spectrum
     # and assign the values set in the `defaults` dict to
@@ -216,81 +229,86 @@ def get_line_info(disp, flux, **kwargs):
     # Have the line finder attempt to find absorption features. Fit the
     # result to the data.
     print('*~*~*~*~*~> setting up the LineFinder *~*~*~*~*~>')
-    print('length of arrays:', len(disp), len(flux))
+    print('length of arrays:', len(disp), len(velocity), len(flux))
     line_finder = LineFinder(rest_wavelength=lambda_0 * u.Unit('Angstrom'),
-                             redshift=redshift,
+                             redshift=0,
                              data_type='flux',
                              defaults=default_values,
                              threshold=threshold, # flux decrement has to be > threshold; default 0.01
                              min_distance=2. * u.Unit('km/s'), # The distance between minima, in dispersion units!
-                             max_iter=3000 # The number of fitter iterations; reduce to speed up fitting at the cost of possibly poorer fits
+                             max_iter=3000, # The number of fitter iterations; reduce to speed up fitting at the cost of possibly poorer fits
+                             lsf=lsf
                              )
     print('*~*~*~*~*~> running the fitter now *~*~*~*~*~>')
-    spec_mod = line_finder(disp, flux)
+    try:
+        spec_mod = line_finder(velocity, flux)
+        print('line_finder worked!')
+        if plot:
+            # Plot for visual checks
+            import matplotlib.pyplot as plt
+            from uuid import uuid4
 
-    if plot:
-        # Plot for visual checks
-        import matplotlib.pyplot as plt
-        from uuid import uuid4
+            f, ax = plt.subplots()
 
-        f, ax = plt.subplots()
+            ax.plot(disp, flux)
+            ax.plot(disp, line_finder._result_model.flux(disp))
+            ax.plot(disp, spec_mod.flux(disp))
 
-        ax.plot(disp, flux)
-        ax.plot(disp, line_finder._result_model.flux(disp))
-        ax.plot(disp, spec_mod.flux(disp))
+            plt.savefig("{}.png".format(uuid4()))
 
-        plt.savefig("{}.png".format(uuid4()))
+        line_properties = {
+            'NCOMP': len(spec_mod.line_models)
+        }
 
-    line_properties = {
-        'NCOMP': len(spec_mod.line_models)
-    }
+        # Calculate total equivalent width -- RESTFRAME!
+        tot_ew = equivalent_width(disp/(1+redshift), flux, continuum=1.0)
+        tot_dv90 = delta_v_90(disp/(1+redshift), flux, continuum=1.0, rest_wavelength=lambda_0 * u.Unit('Angstrom'))
 
-    # Calculate total equivalent width -- RESTFRAME!
-    tot_ew = equivalent_width(disp/(1+redshift), flux, continuum=1.0)
-    tot_dv90 = delta_v_90(disp/(1+redshift), flux, continuum=1.0, rest_wavelength=lambda_0 * u.Unit('Angstrom'))
-
-    line_properties.update({
-        'totEW': (tot_ew.value, tot_ew.unit.to_string()),
-        'totdv90': (tot_dv90.value, tot_dv90.unit.to_string())
-    })
-
-    # Loop over identified absorption regions and calculate the ew and dv90
-    # for the region
-    for i, reg in enumerate(spec_mod.regions):
-        mask = [(disp > disp[reg[0]]) & (disp < disp[reg[1]])]
-
-        reg_dv90 = delta_v_90(disp[mask]/(1+redshift), flux[mask], continuum=1.0,
-                              rest_wavelength=default_values['lambda_0'])
-        reg_ew = equivalent_width(disp[mask]/(1+redshift), flux[mask], continuum=1.0)
-
-        if not np.isnan(reg_ew.value):
-            line_properties.update({
-                'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
-                'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string())
-        })
-
-    line_properties.update({
-        'NREG': len(spec_mod.regions)
-    })
-
-    comp_table = spec_mod.stats(disp)
-    comp_table.sort('delta_v')
-    print(comp_table)
-
-    # Loop over individual ions and calculate per-ion properties
-    for i, line in enumerate(comp_table):
         line_properties.update({
-            'fitcol' + str(i): (line['col_dens'], 'log cm/s'),
-            'fitb' + str(i): (line['v_dop'].value, line['v_dop'].unit.to_string()),
-            'fitvcen' + str(i): (line['delta_v'].value, line['delta_v'].unit.to_string()),
-            'fitEW' + str(i): (line['ew'].value, line['ew'].unit.to_string()),
-            'fitdv90' + str(i): (line['dv90'].value, line['dv90'].unit.to_string()),
-            'fitfwhm' + str(i): (line['fwhm'].value, line['fwhm'].unit.to_string())
+            'totEW': (tot_ew.value, tot_ew.unit.to_string()),
+            'totdv90': (tot_dv90.value, tot_dv90.unit.to_string())
         })
 
-    # except Exception:
-    #     print("***** --->> line finding SO did not work ****")
-    #     lines_properties = {'NCOMP': 0}
+        # Loop over identified absorption regions and calculate the ew and dv90
+        # for the region
+        for i, reg in enumerate(spec_mod.regions):
+            mask = [(velocity > velocity[reg[0]]) & (velocity < velocity[reg[1]])]
+            reg_flux = flux[mask]
+            reg_Nmin = np.size(np.where(reg_flux[argrelextrema(reg_flux, np.less)[0]] < (1-threshold)))
+
+            reg_dv90 = delta_v_90(velocity[mask]/(1+redshift), flux[mask], continuum=1.0,
+                                  rest_wavelength=default_values['lambda_0'])
+            reg_ew = equivalent_width(velocity[mask]/(1+redshift), flux[mask], continuum=1.0)
+
+            if not np.isnan(reg_ew.value):
+                line_properties.update({
+                    'regEW{}'.format(i): (reg_ew.value, reg_ew.unit.to_string()),
+                    'regdv90{}'.format(i): (reg_dv90.value, reg_dv90.unit.to_string()),
+                    'regNmin{}'.format(i): reg_Nmin
+            })
+
+        line_properties.update({
+            'NREG': len(spec_mod.regions)
+        })
+
+        comp_table = spec_mod.stats(velocity)
+        comp_table.sort('delta_v')
+        print(comp_table)
+
+        # Loop over individual ions and calculate per-ion properties
+        for i, line in enumerate(comp_table):
+            line_properties.update({
+                'fitcol' + str(i): (line['col_dens'], 'log cm/s'),
+                'fitb' + str(i): (line['v_dop'].value, line['v_dop'].unit.to_string()),
+                'fitvcen' + str(i): (line['delta_v'].value, line['delta_v'].unit.to_string()),
+                'fitEW' + str(i): (line['ew'].value, line['ew'].unit.to_string()),
+                'fitdv90' + str(i): (line['dv90'].value, line['dv90'].unit.to_string()),
+                'fitfwhm' + str(i): (line['fwhm'].value, line['fwhm'].unit.to_string())
+            })
+
+    except:
+         print("***** --->> line finding SO did not work ****")
+         return {}
 
     return line_properties
 

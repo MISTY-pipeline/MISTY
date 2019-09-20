@@ -29,10 +29,10 @@ def add_galaxy_info_to_fits(filename, haloinfo):
     print('adding physical information from \n', t[thisid])
     assert len(t[thisid]) == 1
 
-    hdu[0].header['Mvir'] = (t['Mvir'][thisid][0], 'Msun')
-    hdu[0].header['Rvir'] = (t['Rvir'][thisid][0], 'kpc')
-    hdu[0].header['Mstar'] = (t['Mstar'][thisid][0], 'Msun')
-    hdu[0].header['Mism'] = (t['Mism'][thisid][0], 'Msun')
+    hdu[0].header['MVIR'] = (t['Mvir'][thisid][0], 'Msun')
+    hdu[0].header['RVIR'] = (t['Rvir'][thisid][0], 'kpc')
+    hdu[0].header['MSTAR'] = (t['Mstar'][thisid][0], 'Msun')
+    hdu[0].header['MISM'] = (t['Mism'][thisid][0], 'Msun')
     hdu[0].header['SFR'] = (t['SFR'][thisid][0], 'Msun/yr')
 
     hdu.writeto(filename, overwrite=True, output_verify='fix')

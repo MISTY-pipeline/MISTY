@@ -17,6 +17,7 @@ import numpy as np
 from astropy.io import fits
 import astropy.units as u
 from astropy.table import Table
+from astropy.io import ascii
 
 def add_galaxy_info_to_fits(filename, haloinfo):
     hdu = fits.open(filename)
@@ -25,14 +26,16 @@ def add_galaxy_info_to_fits(filename, haloinfo):
     # need to find this redshift in the halo_info file
     t = ascii.read(haloinfo, format='fixed_width')
     thisid = t['redshift'] ==  zsnap
-    print('adding physical information from ', t[thisid])
-    assert len(t[thisid] == 1)
+    print('adding physical information from \n', t[thisid])
+    assert len(t[thisid]) == 1
 
-    hdu[0].header['Mvir'] = (t['Mvir'][thisid], 'Msun')
-    hdu[0].header['Rvir'] = (t['Rvir'][thisid], 'kpc')
-    hdu[0].header['Mstar'] = (t['Mstar'][thisid], 'Msun')
-    hdu[0].header['Mism'] = (t['Mism'][thisid], 'Msun')
-    hdu[0].header['SFR'] = (t['SFR'][thisid], 'Msun/yr')
+    hdu[0].header['Mvir'] = (t['Mvir'][thisid][0], 'Msun')
+    hdu[0].header['Rvir'] = (t['Rvir'][thisid][0], 'kpc')
+    hdu[0].header['Mstar'] = (t['Mstar'][thisid][0], 'Msun')
+    hdu[0].header['Mism'] = (t['Mism'][thisid][0], 'Msun')
+    hdu[0].header['SFR'] = (t['SFR'][thisid][0], 'Msun/yr')
+
+    hdu.writeto(filename, overwrite=True, output_verify='fix')
 
 
 if __name__ == "__main__":

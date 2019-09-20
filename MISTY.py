@@ -31,11 +31,17 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['SIM_NAME'] = ray.basename
     prihdr['SIMSUITE'] = 'FOGGIE'
     prihdr['NLINES'] = str(len(np.array(lines)))
-    prihdr['DOI'] = "doi.corlies2019.paper.thisistotesnotmadeup"
-    prihdr['PAPER'] = "Tumlinson et al. (2019) ApJ, ###, ###"
+    prihdr['DOI'] = "doi.peeples2020.paper.thisistotesnotmadeup"
+    prihdr['PAPER'] = "Peeples et al. (2020) RNAAS, ###, ###"
     prihdr['EUVB'] = "HM12"  # probably shouldn't be hardcoded
     prihdr['IMPACT'] = (kwargs.get("impact", "undef"), "impact parameter, kpc")
     prihdr['ANGLE'] = (kwargs.get("angle", "undef"), "radians")
+
+    prihdr['MVIR'] = (kwargs.get('Mvir','undef'), 'Msun')
+    prihdr['RVIR'] = (kwargs.get('Rvir','undef'), 'kpc')
+    prihdr['MSTAR'] = (kwargs.get('Mstar','undef'), 'Msun')
+    prihdr['MISM'] = (kwargs.get('Mism','undef'), 'Msun')
+    prihdr['SFR'] = (kwargs.get('SFR','undef'), 'Msun yr^-1')
 
     lines = ldb.parse_subset(lines)
 

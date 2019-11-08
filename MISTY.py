@@ -24,10 +24,10 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['AUTHOR'] = kwargs.get("author", getpass.getuser())
     prihdr['DATE'] = datetime.datetime.now().isoformat()
     prihdr['REDSHIFT'] = kwargs.get('redshift', 0.0)
-    prihdr['RAYSTART'] = str(start_pos[0]).strip('unitary') + "," + \
-        str(start_pos[1]).strip('unitary') + "," + str(start_pos[2]).strip('unitary')
-    prihdr['RAYEND'] = str(end_pos[0]).strip('unitary') + "," + \
-        str(end_pos[1]).strip('unitary') + "," + str(end_pos[2]).strip('unitary')
+    prihdr['RAYSTART'] = str(start_pos[0]).strip(' unitary') + ", " + \
+        str(start_pos[1]).strip(' unitary') + ", " + str(start_pos[2]).strip(' unitary')
+    prihdr['RAYEND'] = str(end_pos[0]).strip(' unitary') + ", " + \
+        str(end_pos[1]).strip(' unitary') + ", " + str(end_pos[2]).strip(' unitary')
     prihdr['SIM_NAME'] = ray.basename
     prihdr['SIMSUITE'] = 'FOGGIE'
     prihdr['NLINES'] = str(len(np.array(lines)))

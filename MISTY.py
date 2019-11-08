@@ -24,10 +24,10 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['AUTHOR'] = kwargs.get("author", getpass.getuser())
     prihdr['DATE'] = datetime.datetime.now().isoformat()
     prihdr['REDSHIFT'] = kwargs.get('redshift', 0.0)
-    prihdr['RAYSTART'] = str(start_pos[0]) + "," + \
-        str(start_pos[1]) + "," + str(start_pos[2])
-    prihdr['RAYEND'] = str(end_pos[0]) + "," + \
-        str(end_pos[1]) + "," + str(end_pos[2])
+    prihdr['RAYSTART'] = str(start_pos[0]).strip('unitary') + "," + \
+        str(start_pos[1]).strip('unitary') + "," + str(start_pos[2]).strip('unitary')
+    prihdr['RAYEND'] = str(end_pos[0]).strip('unitary') + "," + \
+        str(end_pos[1]).strip('unitary') + "," + str(end_pos[2]).strip('unitary')
     prihdr['SIM_NAME'] = ray.basename
     prihdr['SIMSUITE'] = 'FOGGIE'
     prihdr['NLINES'] = str(len(np.array(lines)))
@@ -37,6 +37,7 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['IMPACT'] = (kwargs.get("impact", "undef"), "impact parameter, kpc")
     prihdr['ANGLE'] = (kwargs.get("angle", "undef"), "radians")
 
+    prihdr['HALONAME'] = (kwargs.get('haloname','undef'))
     prihdr['MVIR'] = (kwargs.get('Mvir','undef'), 'Msun')
     prihdr['RVIR'] = (kwargs.get('Rvir','undef'), 'kpc')
     prihdr['MSTAR'] = (kwargs.get('Mstar','undef'), 'Msun')
@@ -96,7 +97,6 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     '''
     input: a trident lightray and a line; writes info to extension of hdulist
     '''
-    resample = kwargs.get('resample', False)
     if write and type(hdulist) != fits.hdu.hdulist.HDUList:
         raise ValueError(
             'Must pass HDUList in order to write. Call write_header first.')
@@ -117,9 +117,13 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     lambda_min = lambda_rest * (1 + min(ar['redshift_eff'])) - padding
     lambda_max = lambda_rest * (1 + max(ar['redshift_eff'])) + padding
 
-    sg = trident.SpectrumGenerator(lambda_min=lambda_min.value,
-                                   lambda_max=lambda_max.value,
-                                   dlambda=0.01,
+    # using dv
+    halfdv = kwargs.get('halfdv', 500.)
+
+    sg = trident.SpectrumGenerator(lambda_min=-1.0*halfdv,
+                                   lambda_max=halfdv,
+                                   dlambda=0.2,  # km/s
+                                   bin_space='velocity',
                                    line_database='lines.txt'
                                 #   line_database='atom_wave_gamma_f.dat'
                                    )
@@ -129,20 +133,23 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     if write and str(line_out) in sg.line_observables_dict:
         tau = sg.tau_field
         flux = sg.flux_field
-        disp = sg.lambda_field
-        redshift = (sg.lambda_field.value / lambda_rest - 1)
+        disp = sg.lambda_field  ## this is now a velocity
+        velocity = np.array(disp)*u.Unit('km/s')
+        with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_rest*u.Unit('Angstrom')*(1+zsnap))):
+            wavelength = velocity.to('Angstrom')
+        redshift = (wavelength / u.Unit('Angstrom') - 1)
 
         z_col = fits.Column(name='redshift', format='E', array=redshift)
-        wavelength = fits.Column(name='wavelength', format='E',
-                                 array=disp, unit='Angstrom')
+        vel_col = fits.Column(name='velocity', format='E',
+                                 array=disp, unit='km/s')
         tau_col = fits.Column(name='tau', format='E', array=tau)
         flux_col = fits.Column(name='flux', format='E', array=flux)
-        col_list = [z_col, wavelength, tau_col, flux_col]
+        col_list = [z_col, vel_col, tau_col, flux_col]
 
-        for key in sg.line_observables_dict[str(line_out)].keys():
-            col = fits.Column(name='sim_' + key, format='E',
-                              array=sg.line_observables_dict[str(line_out)][key])
-            col_list = np.append(col_list, col)
+        #for key in sg.line_observables_dict[str(line_out)].keys():
+        #    col = fits.Column(name='sim_' + key, format='E',
+        #                      array=sg.line_observables_dict[str(line_out)][key])
+        #    col_list = np.append(col_list, col)
 
         cols = fits.ColDefs(col_list)
         sghdr = fits.Header()

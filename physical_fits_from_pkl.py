@@ -76,12 +76,12 @@ def physical_fits_from_pkl(pkl_name, orig_fits_name, new_fits_name, **kwargs):
 
 if __name__ == "__main__":
 
-    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*v6_los.fits.gz'))
+    long_dataset_list = glob.glob(os.path.join(".", 'hlsp*vjt_los.fits.gz'))
     ##long_dataset_list = ['./hlsp_misty_foggie_halo008508_nref11n_nref10f_rd0020_axy_dx042.9_dz082.4_v6_lsf.fits.gz']
     dataset_list = long_dataset_list
 
     for filename in dataset_list:
-        pkl_file = '../' + filename.strip('_los.fits.gz').replace('.','') + '_sizes.pkl'
-        out_fits_name =  '.' + filename.strip('_los.fits.gz') + '_physical.fits.gz'
+        pkl_file = '.' + filename[:-11].replace('.','') + 'sizes.pkl'
+        out_fits_name = '.' + filename[:-11] + 'physical.fits.gz'
         print('reading in pkl file ', pkl_file, ' and creating fits file ', out_fits_name)
         physical_fits_from_pkl(pkl_file, filename, out_fits_name)

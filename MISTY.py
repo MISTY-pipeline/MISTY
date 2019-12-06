@@ -33,7 +33,7 @@ def write_header(ray, start_pos=None, end_pos=None, lines=None, **kwargs):
     prihdr['NLINES'] = str(len(np.array(lines)))
     prihdr['DOI'] = "doi.peeples2020.paper.thisistotesnotmadeup"
     prihdr['PAPER'] = "Peeples et al. (2020) RNAAS, ###, ###"
-    prihdr['EUVB'] = "HM12"  # probably shouldn't be hardcoded
+    prihdr['EUVB'] = "HM12_SS"  # probably shouldn't be hardcoded
     prihdr['IMPACT'] = (kwargs.get("impact", "undef"), "impact parameter, kpc")
     prihdr['ANGLE'] = (kwargs.get("angle", "undef"), "radians")
 
@@ -118,11 +118,12 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
     lambda_max = lambda_rest * (1 + max(ar['redshift_eff'])) + padding
 
     # using dv
-    halfdv = kwargs.get('halfdv', 500.)
+    halfdv = kwargs.get('halfdv', 500.)  # km/s
+    pixdv = kwargs.get('pixdv', 0.2) # km/s
 
     sg = trident.SpectrumGenerator(lambda_min=-1.0*halfdv,
                                    lambda_max=halfdv,
-                                   dlambda=0.2,  # km/s
+                                   dlambda=pixdv,  # km/s
                                    bin_space='velocity',
                                    line_database='lines.txt'
                                 #   line_database='atom_wave_gamma_f.dat'
@@ -137,7 +138,7 @@ def generate_line(ray, line, zsnap=0.0, write=False, use_spectacle=True, hdulist
         velocity = np.array(disp)*u.Unit('km/s')
         with u.set_enabled_equivalencies(u.equivalencies.doppler_relativistic(lambda_rest*u.Unit('Angstrom')*(1+zsnap))):
             wavelength = velocity.to('Angstrom')
-        redshift = (wavelength / u.Unit('Angstrom') - 1)
+        redshift = (wavelength / (lambda_rest* u.Unit('Angstrom')) - 1)
 
         z_col = fits.Column(name='redshift', format='E', array=redshift)
         vel_col = fits.Column(name='velocity', format='E',
